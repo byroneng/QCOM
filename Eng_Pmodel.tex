@@ -1,0 +1,207 @@
+
+% This LaTeX was auto-generated from an M-file by MATLAB.
+% To make changes, update the M-file and republish this document.
+
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{subfig}
+\usepackage{fancyvrb}
+\usepackage{color}
+
+
+\sloppy
+\definecolor{lightgray}{gray}{0.5}
+\setlength{\parindent}{0pt}
+
+\begin{document}
+
+% If you don't want a supervisor, uncomment the two lines below and remove the section above
+Byron \textsc{Eng}\\ % Your name
+ATMOS 6150\\
+HW3\\
+{\large \today}\\
+
+\section{Model}
+	The following model was used to simulate a saturated parcel moving from 1000mb to 250mb. The model was written in Fortran 90.
+	
+	
+	\begin{Verbatim}[fontsize=\footnotesize]
+program main
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! ATMOS 6150
+! Byron Eng
+!
+! This program performs a saturation adjustment on the parcel.
+! Input: THETAstar Wstar Lstar Pnpp (before adjustment; after other processes)
+! Output: THETAnpp Wnpp Lnpp
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+	implicit none
+
+	real THETAstar, Wstar		! Initial Potential Temperature, Initial Water Vapor
+	real     Lstar, Pnpp 		! Initial Liquid Water, Pressure (n+1)
+	real        Po, Rv, Cp		! Ref Pressure, Gas Const, Spec Heat
+	real      gamm, exnr		! Gamma, Exner Function
+	real        Ws, es, alph	! Saturation Mixing Ratio, Saturation VP, alpha
+	real         L, T, THETAnpp	! Latent Heat, Temperature, Potential Temp (n+1)
+	real      Wnpp, Lnpp, R 	! Mixing Ratio (n+1), Liquid Water (n+1), Dry gas const
+	real	THETAe, Wtot, RH	! Equivalent potential temp
+	
+	integer,dimension(5000)	:: Parray			! Pressure array
+	character(15) filename
+	real     dP, Pmin, Pstar	! Pressure increment, min pressure, pressure
+	integer		 i
+	
+	print *, 'Enter maximum pressure (Pa)'
+	read (*,*) Pstar
+
+	print *, 'Enter minimum pressure (Pa)'
+	read (*,*) Pmin
+
+	print *, 'Enter initial temperature (K)'
+	read (*,*) T
+
+	print *, 'Enter initial water vapor concentration (g/g)'
+	read (*,*) Wstar
+
+	print *, 'Enter initial liquid water concentration (g/g)'
+	read (*,*) Lstar
+
+	dP    = (Pstar-Pmin)/size(Parray)					
+	Po    = 100000
+	Rv    = 461.5
+	R     = 287
+	Cp    = 1004
+	L = 2.5e6
+	Pnpp = Pstar - dP
+
+	do i = 1,size(Parray)
+		Parray(i) = Pstar - (dP*(i-1))
+	end do
+
+	filename = './parcelout.txt'
+	write(*,*) 'Saving File as: '//filename
+	open(98, file=filename)
+	do i = 1,size(Parray)
+
+		exnr = (Pnpp/Po)**(R/Cp)
+		gamm  = L/(Cp*exnr)
+
+		IF (i==1) THEN
+		THETAstar    = T/exnr
+		END IF
+
+		T = THETAstar * exnr
+
+		! Wexler's formula for es(T)
+  		es = exp(   (-0.29912729e4  *((T)**(-2)))  + &
+           	            (-0.60170128e4  *((T)**(-1)))  + &
+                   		( 0.1887643854e2*((T)**( 0)))  + & 
+                   		(-0.28354721e-1 *((T)**( 1)))  + &
+                   		( 0.17838301e-4 *((T)**( 2)))  + &
+                   		(-0.84150417e-9 *((T)**( 3)))  + &
+                   		( 0.44412543e-12*((T)**( 4)))  + &
+                   		( 0.2858487e1*log( T)))
+
+		Ws = 0.622*(es/(Pnpp - es))
+
+		alph = 0.622*((exnr*Pnpp)/(Pnpp - es)**2)*((L*es)/(Rv*(T**2)))
+			
+		!Saturated case
+		THETAnpp = THETAstar + (gamm/(1+gamm*alph))*(Wstar - Ws)
+		Wnpp = Ws + alph*(THETAnpp - THETAstar)
+		Lnpp = Wstar + Lstar - Wnpp
+
+		IF (dP > 0) THEN
+		Lnpp = Lnpp - (.0002*dP*Lnpp) ! Precip. -dl/dp = -Cl  where C = .02 mb^-1
+		END IF
+
+		!Unsaturated case
+		IF (Lnpp < 0) THEN
+			Lnpp = 0
+			Wnpp = Wstar + Lstar
+			THETAnpp = THETAstar - gamm*(Wnpp - Wstar)
+		END IF
+
+		THETAstar = THETAnpp
+		THETAe = THETAstar*exp((L*Ws)/(Cp*T))
+		Wstar = Wnpp
+		Lstar = Lnpp
+		Pnpp = Pnpp - dP
+		Wtot = Wstar + Lstar
+		RH   = (Wstar/Ws)*100
+		write(98,*) Pnpp,T,THETAstar,THETAe,Lstar,Wstar,Wtot,RH
+
+		end do
+	close(98)
+
+end program
+\end{Verbatim}	
+
+\section{Code for Plots}
+	The following R code was used to produce the plots.    
+	\begin{Verbatim}[fontsize=\footnotesize]
+### This script plots data output from the parcel model
+
+graphics.off()
+
+dat <- read.table('parcelout.txt')
+
+names(dat) = c('Pressure','TempK','Theta','eTheta','Wl','Wv','Wtot','RH')
+
+plot(dat$TempK,dat$Pressure/100,xlim=c(220,350),ylim=c(1000,200),type='l',
+	xlab='Temperature [K]',ylab='Pressure [mb]',lwd=2)
+
+lines(dat$Theta,dat$Pressure/100,col='red',lwd=2)
+lines(dat$eTheta,dat$Pressure/100,col='blue',lwd=2)
+
+legend('bottomleft',c('T',expression(theta),
+expression(theta[e])),col=c('black','red','blue'),lty=1,lwd=2)
+title('Parcel Model Output')
+
+
+
+dev.new()
+
+plot(log10(dat$Wv),dat$Pressure/100,type='l',ylim=c(1000,250),
+	xlab=bquote(paste(log[10],' Mixing Ratio [kg/kg]')),ylab='Pressure [mb]',lwd=2)
+
+lines(log10(dat$Wl),dat$Pressure/100,col='red',lwd=2)
+lines(log10(dat$Wtot),dat$Pressure/100,col='blue',lwd=2)
+
+legend(-3.5,700,c('Water Vapor','Liquid Water','Total Water'),
+	col=c('black','red','blue'),lty=1,lwd=2)
+
+title('Parcel Model Output')
+
+
+\end{Verbatim}
+
+%        \color{lightgray} 
+        
+\section{Plots}
+
+\begin{figure}
+\begin{tabular}{cc}
+\includegraphics[width=65mm]{Pmodelout1.png} &   \includegraphics[width=65mm]{Pmodelout2.png}  \\[6pt]
+\end{tabular}
+\caption{Part b) No precipitation. In these plots the parcel is ascending moist adiabatically. The temperature curve resembles a moist adiabat, potential temperature increases with height due to the latent heat release of condensation, and equivalent potential temperature stays constant. The curve on the right shows the parcel condensing out all of its water vapor into liquid water, while total water stays constant.}
+\end{figure}
+
+\begin{figure}
+\begin{tabular}{cc}
+ \includegraphics[width=65mm]{Pmodelout3.png} &   \includegraphics[width=65mm]{Pmodelout4.png} \\[6pt]
+\end{tabular}
+\caption{Part c) (1) Allowing precipitation. The plot on the left looks identical to part b); the parcel ascends and condenses water vapor into liquid water. The plot on the right shows that the liquid water is precipitating out, decreasing the total water in the parcel.}
+\end{figure}
+
+\begin{figure}
+\begin{tabular}{cc}
+ \includegraphics[width=65mm]{Pmodelout5.png} &   \includegraphics[width=65mm]{Pmodelout6.png} \\[6pt]
+\end{tabular}
+\caption{Part c) (2) Descending parcel. The parcel returns to the surface after ascending. The right plot shows all of the liquid water quickly evaporates, then the total water contains only water vapor and remains constant all the way down. Once all of the water is evaporated, the parcel descends dry adiabatically as potential temperature remains constant.}
+\end{figure}
+
+\end{document}
+    
