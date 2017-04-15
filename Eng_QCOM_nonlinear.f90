@@ -47,7 +47,7 @@ program qcom
       real, dimension (0:jp+1, 0:kp+1) :: pi
       real, dimension (1:jp, 1:kp, 2) :: fpi
 
-      parameter (tmax = 3000., dt = .01) 
+      parameter (tmax = 3000., dt = .1) 
       parameter (ITTMAX = tmax/dt, Nout = 10)
       real, dimension (1:FLOOR(tmax/Nout), 0:kv+1) :: Vout
       real, dimension (1:FLOOR(tmax/Nout), 0:kth+1) :: THout
@@ -177,7 +177,7 @@ contains
       CALL AB ( N1, N2, A, B ) ! update variables using a time scheme
       CALL BOUND ! apply boundary conditions to variables
 
-      if(mod(itt*1.,1000.) .eq. 0) then
+      if (mod(itt*1.,1000.) .eq. 0) then
 
             write(81,*) sum(v)
 
@@ -244,8 +244,8 @@ contains
       fw(j,k,N2) = - (((((v(j,k+1)+v(j,k))/2.)*((w(j+1,k)-w(j,k))/dj))               &
                         +(((v(j-1,k+1)+v(j-1,k))/2.)*((w(j,k)-w(j-1,k))/dj)))/2.)    &
             - (w(j,k)*((w(j,k+1)-w(j,k-1))/(2.*dk)))                                  &
-            - (Cp*(0.5*(thetao(j,k+1)+thetao(j,k)))*(pi(j,k+1) - pi(j,k))/dk)        &
-            + (g*((((theta(j,k+1) + theta(j,k))/2.)/((thetao(j,k+1)+thetao(j,k))/2.))-1.))  &
+            - (Cp*(thetao(j,k+1)+thetao(j,k))*0.5*(pi(j,k+1)-pi(j,k))/dk)        &
+            + (g*((((theta(j,k+1) + theta(j,k)))/((thetao(j,k+1)+thetao(j,k))))-1.))  &
             + (ekp*(w(j,k+1) - (2.*w(j,k)) + w(j,k-1)) / (dk**2.))                    &
             + (ekp*(w(j+1,k) - (2.*w(j,k)) + w(j-1,k)) / (dj**2.))
       END DO
@@ -311,8 +311,8 @@ contains
       w(j,kt+1) = 0.
       theta(j,0) = thetao(j,0)+thetao(j,1)-theta(j,1)
       theta(j,kt+1) = thetao(j,kt+1)+thetao(j,kt)-theta(j,kt)
-!      pi(j,0) = pi(j,1)
-!      pi(j,kt+1) = pi(j,kt)
+      pi(j,0) = pi(j,1)
+      pi(j,kt+1) = pi(j,kt)
       end do
 
       do k = 0, kt+1
@@ -368,8 +368,7 @@ contains
       end do
 
       do j=1, jt
-            theta(j,floor(kt/2.):ceiling((kt+.5)/2.)) = theta(j,floor(kt/2.):ceiling((kt+.5)/2.)) + &
-                                                            (.05*2.4)*cos((2*3.14159/L)*j*dj)
+            theta(j,5:6) = theta(j,5:6) + (.05*2.4)*cos((2*3.14159/L)*j*dj)
       end do
     
       CALL BOUND
