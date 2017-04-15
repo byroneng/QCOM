@@ -177,7 +177,7 @@ contains
       CALL AB ( N1, N2, A, B ) ! update variables using a time scheme
       CALL BOUND ! apply boundary conditions to variables
 
-      if (mod(itt*1.,1000.) .eq. 0) then
+      if ((itt .gt. 10000).and.(itt .lt. 12000).and.(mod(itt*1.,15.) .eq. 0)) then
 
             write(81,*) sum(v)
 
@@ -268,7 +268,7 @@ contains
       DO J = 1, JT
       fpi(j,k,N2) = -((Cs**2.)/(Cp*(thetao(j,k)**2.)))                              &
                   * ((((thetao(j,k)*v(j,k)) - (thetao(j,k)*v(j-1,k))) / dj)      &
-                  + (((thetao(j,k+1) + thetao(j,k))*w(j,k)/2.) - ((thetao(j,k) + thetao(j,k-1))*w(j,k-1)/2.))/dk)
+                  + (((thetao(j,k+1) + thetao(j,k))*w(j,k)) - ((thetao(j,k) + thetao(j,k-1))*w(j,k-1)))/(2.*dk))
 
       END DO
       END DO
@@ -304,7 +304,7 @@ contains
 
 !     apply boundary conditions for v
 
-      do j = 1, jt 
+      do j = 0, jt+1 
       v(j,0) = v(j,1) ! free slip b.c.
       v(j,kt+1) = v(j,kt) ! free slip b.c.
       w(j,0) = 0. ! no vert. motion at surface
@@ -315,7 +315,7 @@ contains
       pi(j,kt+1) = pi(j,kt)
       end do
 
-      do k = 0, kt+1
+      do k = 1, kt
       v(0,k) = v(jt,k) ! periodic b.c.
       v(jt+1,k) = v(1,k) ! periodic b.c.
       w(0,k) = w(jt,k)
