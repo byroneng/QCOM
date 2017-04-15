@@ -47,10 +47,8 @@ program qcom
       real, dimension (0:jp+1, 0:kp+1) :: pi
       real, dimension (1:jp, 1:kp, 2) :: fpi
 
-      parameter (tmax = 3000., dt = .1) 
+      parameter (tmax = 30000., dt = .1) 
       parameter (ITTMAX = tmax/dt, Nout = 10)
-      real, dimension (1:FLOOR(tmax/Nout), 0:kv+1) :: Vout
-      real, dimension (1:FLOOR(tmax/Nout), 0:kth+1) :: THout
 
       CALL INIT
 
@@ -177,7 +175,7 @@ contains
       CALL AB ( N1, N2, A, B ) ! update variables using a time scheme
       CALL BOUND ! apply boundary conditions to variables
 
-      if ((itt .gt. 10000).and.(itt .lt. 12000).and.(mod(itt*1.,15.) .eq. 0)) then
+      if (mod(itt*1.,1000.) .eq. 0) then
 
             write(81,*) sum(v)
 
@@ -308,7 +306,7 @@ contains
       v(j,0) = v(j,1) ! free slip b.c.
       v(j,kt+1) = v(j,kt) ! free slip b.c.
       w(j,0) = 0. ! no vert. motion at surface
-      w(j,kt+1) = 0.
+      w(j,kt) = 0.
       theta(j,0) = thetao(j,0)+thetao(j,1)-theta(j,1)
       theta(j,kt+1) = thetao(j,kt+1)+thetao(j,kt)-theta(j,kt)
       pi(j,0) = pi(j,1)
@@ -318,14 +316,16 @@ contains
       do k = 1, kt
       v(0,k) = v(jt,k) ! periodic b.c.
       v(jt+1,k) = v(1,k) ! periodic b.c.
-      w(0,k) = w(jt,k)
-      w(jt+1,k) = w(1,k)
       theta(0,k) = theta(jt,k)
       theta(jt+1,k) = theta(1,k)
       pi(0,k) = pi(jt,k)
       pi(jt+1,k) = pi(1,k)
       end do
 
+      do k=1, kt-1
+      w(0,k) = w(jt,k)
+      w(jt+1,k) = w(1,k)
+      end do
 
 
 !     ETC (apply b.c. for w, theta, and pi)
@@ -336,7 +336,7 @@ contains
             
 !     initialize all variables 
 
-      debug = .true.
+      debug = .false.
       animate = .true.
       ekth = 50. !eddy viscosity
       ekv  = 50.
@@ -355,7 +355,9 @@ contains
             v(:,k) = 0.0
             w(:,k) = 0.0
             pi(:,k) = 0.0
+      end do
 
+      do k=1, kt
             ftheta(:,k,1) = 0.0
             fv(:,k,1) = 0.0
             fw(:,k,1) = 0.0
