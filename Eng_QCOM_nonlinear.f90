@@ -1,6 +1,6 @@
 program qcom
 
-!     gfortran -o qcomnonlinear -fdefault-real-8 Eng_QCOM_nonlinear.f90
+!     gfortran -o qcomnonlinear -fdefault-real-8 -Wall -fcheck=all Eng_QCOM_nonlinear.f90
 
 !     pgf90 -c print.f
 !     pgf90 -o qcom QCOM.f90 print.o
@@ -47,7 +47,7 @@ program qcom
       real, dimension (0:jp+1, 0:kp+1) :: pi
       real, dimension (1:jp, 1:kp, 2) :: fpi
 
-      parameter (tmax = 30000., dt = .1) 
+      parameter (tmax = 3000., dt = .1) 
       parameter (ITTMAX = tmax/dt, Nout = 10)
 
       CALL INIT
@@ -175,7 +175,7 @@ contains
       CALL AB ( N1, N2, A, B ) ! update variables using a time scheme
       CALL BOUND ! apply boundary conditions to variables
 
-      if (mod(itt*1.,1000.) .eq. 0) then
+      if (mod(itt*1.,300.) .eq. 0) then
 
             write(81,*) sum(v)
 
@@ -307,6 +307,7 @@ contains
       v(j,kt+1) = v(j,kt) ! free slip b.c.
       w(j,0) = 0. ! no vert. motion at surface
       w(j,kt) = 0.
+      w(j,kt+1) = 0.
       theta(j,0) = thetao(j,0)+thetao(j,1)-theta(j,1)
       theta(j,kt+1) = thetao(j,kt+1)+thetao(j,kt)-theta(j,kt)
       pi(j,0) = pi(j,1)
@@ -337,13 +338,13 @@ contains
 !     initialize all variables 
 
       debug = .false.
-      animate = .true.
+      animate = .false.
       ekth = 50. !eddy viscosity
       ekv  = 50.
       ekp  = 50.
       H = 500.
       L = (2.**(3./2.))*H
-      delth = 2.4
+      delth = 1.2
       Cs = 50.
       dk = H/real(kt) !Vertical gridsize
       dj = L/real(jt) !y- gridsize

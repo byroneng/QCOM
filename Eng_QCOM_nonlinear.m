@@ -5,7 +5,7 @@
 clear all
 close all
 
-animate = true;
+animate = false;
 
 %% Read in the data
 v = dlmread('v.dat');
@@ -19,11 +19,11 @@ ttheta = dlmread('ttheta.dat');
 tPi = dlmread('tpi.dat');
 
 
-% %Normalize
-% v = v/max(max(v));
-% w = w/max(max(w));
-% theta = theta/max(max(theta));
-% Pi = Pi/max(max(Pi));
+%Normalize
+v = v/max(max(v));
+w = w/max(max(w));
+theta = theta/max(max(theta));
+Pi = Pi/max(max(Pi));
 
 
 %%Plots
@@ -62,42 +62,53 @@ xlabel('Time [s]')
 ylabel('Kinetic Energy')
 title('Mean Kinetic Energy Profile')
 
-% figure('OuterPosition',[0 0 900 800])
-% 
-% %theta
-% subplot(2,2,1)
-% mtheta = mean(theta,2);
-% plot(mtheta,50*(1:length(mtheta)))
-% title('Mean \theta Perturbation [K]')
-% ylabel('Height [m]')
-% xlabel('\theta [K]')
-% 
-% %conductive vertical heat flux
-% kth = 50;
-% cdhf = -diff(mtheta) * kth;
-% 
-% subplot(2,2,2)
-% plot(cdhf,50*(1:length(cdhf)))
-% title('Conductive Vertical Heat Flux')
-% ylabel('Height')
-% xlabel('Heat Flux')
-% 
-% %Convective vertical heat flux
-% 
+figure('OuterPosition',[0 0 900 800])
+
+%theta
+kth = 50;
+subplot(2,2,1)
+mtheta = mean(theta,2);
+plot(mtheta,kth*((1:length(mtheta))-1))
+title('Mean \theta Perturbation [K]')
+ylabel('Height [m]')
+xlabel('\theta [K]')
+ylim([0 500])
+
+
+%conductive vertical heat flux
+cdhf = -diff(mtheta) * kth;
+tohf = repmat(cdhf(1),1,length(cdhf));
+cvhf = tohf-cdhf';
+
+subplot(2,2,2)
+plot(cdhf,kth*((1:length(cdhf))-1))
+title('Conductive Vertical Heat Flux')
+ylabel('Height')
+xlabel('Heat Flux')
+xlim([-20 25])
+ylim([0 500])
+
+%Convective vertical heat flux
+
 % cvhf = mean(w.*theta,2);
-% 
-% subplot(2,2,3)
-% plot(cvhf,50*(1:length(cvhf)))
-% title('Convective Vertical Heat Flux')
-% ylabel('Height [m]')
-% xlabel('Heat Flux')
-% 
-% %Total heat flux
-% subplot(2,2,4)
-% plot(cdhf+cvhf(1:length(cdhf)),1:length(cdhf))
-% title('Total Heat Flux')
-% ylabel('Height [m]')
-% xlabel('Heat Flux')
+
+subplot(2,2,3)
+plot(cvhf,kth*((1:length(cvhf))-1))
+title('Convective Vertical Heat Flux')
+ylabel('Height [m]')
+xlabel('Heat Flux')
+xlim([-20 25])
+ylim([0 500])
+
+%Total heat flux
+subplot(2,2,4)
+% plot(cdhf+cvhf(1:length(cdhf)),50*(1:length(cdhf)))
+plot(tohf,kth*((1:length(tohf))-1))
+title('Total Heat Flux')
+ylabel('Height [m]')
+xlabel('Heat Flux')
+xlim([-20 25])
+ylim([0 500])
 % 
 % %Rayleigh Number / Nusselt Number
 % alpha = 
