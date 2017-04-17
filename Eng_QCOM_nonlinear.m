@@ -85,7 +85,7 @@ plot(cdhf,kth*((1:length(cdhf))-1))
 title('Conductive Vertical Heat Flux')
 ylabel('Height')
 xlabel('Heat Flux')
-xlim([-20 25])
+xlim([-20 max(cvhf)+5])
 ylim([0 500])
 
 %Convective vertical heat flux
@@ -97,7 +97,7 @@ plot(cvhf,kth*((1:length(cvhf))-1))
 title('Convective Vertical Heat Flux')
 ylabel('Height [m]')
 xlabel('Heat Flux')
-xlim([-20 25])
+xlim([-20 max(cvhf)+5])
 ylim([0 500])
 
 %Total heat flux
@@ -107,12 +107,9 @@ plot(tohf,kth*((1:length(tohf))-1))
 title('Total Heat Flux')
 ylabel('Height [m]')
 xlabel('Heat Flux')
-xlim([-20 25])
+xlim([-20 max(cvhf)+5])
 ylim([0 500])
-% 
-% %Rayleigh Number / Nusselt Number
-% alpha = 
-% rayleigh = 9.81 * 
+
 
 if animate
     %use av.dat, aw.dat, etc.
