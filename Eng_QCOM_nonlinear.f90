@@ -344,7 +344,7 @@ contains
       ekp  = 50.
       H = 500.
       L = (2.**(3./2.))*H
-      delth = 1.2
+      delth = 4.8
       Cs = 50.
       dk = H/real(kt) !Vertical gridsize
       dj = L/real(jt) !y- gridsize
