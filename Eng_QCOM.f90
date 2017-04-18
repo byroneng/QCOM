@@ -14,7 +14,7 @@ program qcom
 !     Added f90 declarations and procedures.
 
 
-      real dk, ekth, ekp, ekv
+      real dk, ekth, ekp, ekv, qv, qc, qvo
       real th0, Cs, H, L, dj
 
       !!! Parameters
@@ -43,6 +43,9 @@ program qcom
       real, dimension (0:jth+1, 0:kth+1) :: thetao
       real, dimension (0:jth+1, 0:kth+1) :: theta
       real, dimension (1:jth, 1:kth, 2) :: ftheta
+      real, dimension (0:jth+1, 0:kth+1) :: thetav
+      real, dimension (0:jth+1, 0:kth+1) :: thetavo
+
 
       real, dimension (0:jp+1, 0:kp+1) :: pi
       real, dimension (1:jp, 1:kp, 2) :: fpi
@@ -372,6 +375,12 @@ contains
 
       do j=1, jt
             theta(j,5:6) = theta(j,5:6) + (.05*2.4)*cos((2*3.14159/L)*j*dj)
+      end do
+
+      do k=1, kt
+            do j=1, jt
+                  thetavo(j,k) = thetao(j,k)*(1.+0.61*qvo)
+            end do
       end do
     
       CALL BOUND
