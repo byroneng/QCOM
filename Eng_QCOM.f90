@@ -393,9 +393,9 @@ contains
             do j=1, jt
                   thetavo(j,k) = thetao(j,k)*(1.+0.61*qvo)
                   thetav(j,k) = thetavo(j,k)
-                  thetal(j,k) = theta(j,k) - ((La/(Cp*pio(j,k)))*qc(j,k))
                   qw(j,k) = qc(j,k)+qv(j,k)
                   pio(j,k) = - (g/(Cp*thetavo(j,k)))
+                  thetal(j,k) = theta(j,k) - ((La/(Cp*pio(j,k)))*qc(j,k))
             end do
       end do
 
