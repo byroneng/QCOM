@@ -355,6 +355,16 @@ contains
       thetav(j,kt+1) = thetavo(j,kt+1)+thetavo(j,kt)-thetav(j,kt)
       pi(j,0) = pi(j,1)
       pi(j,kt+1) = pi(j,kt)
+      qv(j,0) = qv(j,1)
+      qv(j,kt+1) = qv(j,kt)
+      qvo(j,0) = qvo(j,1)
+      qvo(j,kt+1) = qvo(j,kt)
+      qw(j,0) = qw(j,1)
+      qw(j,kt+1) = qw(j,kt)
+      qc(j,0) = qc(j,1)
+      qc(j,kt+1) = qc(j,kt)
+      thetal(j,0) = theta(j,0) - ((La/(Cp*pio(j,0)))*qc(j,0))
+      thetal(j,kt+1) = theta(j,kt+1) - ((La/(Cp*pio(j,kt+1)))*qc(j,kt+1))
       end do
 
       do k = 1, kt
@@ -364,6 +374,18 @@ contains
       theta(jt+1,k) = theta(1,k)
       pi(0,k) = pi(jt,k)
       pi(jt+1,k) = pi(1,k)
+      thetav(0,k) = thetav(jt,k)
+      thetav(jt+1,k) = thetav(1,k)
+      thetal(0,k) = thetal(jt,k)
+      thetal(jt+1,k) = thetal(1,k)
+      qv(0,k) = qv(jt,k)
+      qv(jt+1,k) = qv(1,k)
+      qvo(0,k) = qvo(jt,k)
+      qvo(jt+1,k) = qvo(1,k)
+      qw(0,k) = qw(jt,k)
+      qw(jt+1,k) = qw(1,k)
+      qc(0,k) = qc(jt,k)
+      qc(jt+1,k) = qc(1,k)
       end do
 
       do k=1, kt-1
