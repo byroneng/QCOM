@@ -424,7 +424,7 @@ contains
             w(:,k) = 0.0
             pi(:,k) = 0.0
             qc(:,k) = 0.0
-            qvo(:,k) = 0.0
+            qvo(:,k) = 0.03
             qv(:,k) = qvo(:,k)
       end do
 
