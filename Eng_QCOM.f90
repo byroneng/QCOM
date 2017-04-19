@@ -251,7 +251,8 @@ contains
             - (w(j,k)*((w(j,k+1)-w(j,k-1))/(2.*dk)))                                  &
             - (Cp*(thetavo(j,k+1)+thetao(j,k))*0.5*(pi(j,k+1)-pi(j,k))/dk)        &
             + (g*((((theta(j,k+1) + theta(j,k)))/((thetao(j,k+1)+thetao(j,k))))-1.   &
-                  +0.61*(qv(j,k)-qvo(j,k))-qc(j,k)))                              &
+                  +(0.61*(((qv(j,k)+qv(j,k+1))-(qvo(j,k)+qvo(j,k+1)))*0.5))           &
+                  -(0.5*(qc(j,k)+qc(j,k+1)))))         &
             + (ekp*(w(j,k+1) - (2.*w(j,k)) + w(j,k-1)) / (dk**2.))                    &
             + (ekp*(w(j+1,k) - (2.*w(j,k)) + w(j-1,k)) / (dj**2.))
       END DO
