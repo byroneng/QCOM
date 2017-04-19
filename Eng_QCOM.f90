@@ -14,7 +14,7 @@ program qcom
 !     Added f90 declarations and procedures.
 
 
-      real dk, ekth, ekp, ekv
+      real dk, ekth, ekp, ekv, La
       real th0, Cs, H, L, dj
 
       !!! Parameters
@@ -45,14 +45,16 @@ program qcom
       real, dimension (1:jth, 1:kth, 2) :: ftheta
       real, dimension (0:jth+1, 0:kth+1) :: thetav
       real, dimension (0:jth+1, 0:kth+1) :: thetavo
+      real, dimension (0:jth+1, 0:kth+1) :: thetal
 
-
+      real, dimension (0:jp+1, 0:kp+1) :: pio
       real, dimension (0:jp+1, 0:kp+1) :: pi
       real, dimension (1:jp, 1:kp, 2) :: fpi
 
       real, dimension (0:jth+1, 0:kth+1) :: qv
       real, dimension (0:jth+1, 0:kth+1) :: qvo
       real, dimension (0:jth+1, 0:kth+1) :: qc
+      real, dimension (0:jth+1, 0:kth+1) :: qw
 
       parameter (tmax = 3000., dt = .1) 
       parameter (ITTMAX = tmax/dt, Nout = 10)
@@ -357,6 +359,7 @@ contains
       Cs = 50.
       dk = H/real(kt) !Vertical gridsize
       dj = L/real(jt) !y- gridsize
+      La = 2.5e6 !J K^-1 kg^1
 
 
       do k=0, kt+1
@@ -390,6 +393,9 @@ contains
             do j=1, jt
                   thetavo(j,k) = thetao(j,k)*(1.+0.61*qvo)
                   thetav(j,k) = thetavo(j,k)
+                  thetal(j,k) = theta(j,k) - ((La/(Cp*pio(j,k)))*qc(j,k))
+                  qw(j,k) = qc(j,k)+qv(j,k)
+                  pio(j,k) = - (g/(Cp*thetavo(j,k)))
             end do
       end do
 
