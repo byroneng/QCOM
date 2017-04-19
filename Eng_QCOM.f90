@@ -1,6 +1,7 @@
 program qcom
 
-!     gfortran -o qcomnonlinear -fdefault-real-8 -Wall -fcheck=all Eng_QCOM_nonlinear.f90
+!     gfortran -c adjust.f
+!     gfortran -o qcomcloud -fdefault-real-8 -Wall -fcheck=all Eng_QCOM_nonlinear.f90 adjust.o
 
 !     pgf90 -c print.f
 !     pgf90 -o qcom QCOM.f90 print.o
