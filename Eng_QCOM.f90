@@ -274,8 +274,8 @@ contains
       DO K = 1, KT
       DO J = 1, JT
       fpi(j,k,N2) = -((Cs**2.)/(Cp*(thetao(j,k)**2.)))                              &
-                  * ((((thetao(j,k)*v(j,k)) - (thetao(j,k)*v(j-1,k))) / dj)      &
-                  + (((thetao(j,k+1) + thetao(j,k))*w(j,k)) - ((thetao(j,k) + thetao(j,k-1))*w(j,k-1)))/(2.*dk))
+                  * ((((thetavo(j,k)*v(j,k)) - (thetavo(j,k)*v(j-1,k))) / dj)      &
+                  + (((thetavo(j,k+1) + thetavo(j,k))*w(j,k)) - ((thetavo(j,k) + thetavo(j,k-1))*w(j,k-1)))/(2.*dk))
 
       END DO
       END DO
