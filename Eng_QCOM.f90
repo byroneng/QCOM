@@ -351,6 +351,8 @@ contains
       w(j,kt+1) = 0.
       theta(j,0) = thetao(j,0)+thetao(j,1)-theta(j,1)
       theta(j,kt+1) = thetao(j,kt+1)+thetao(j,kt)-theta(j,kt)
+      thetav(j,0) = thetavo(j,0)+thetavo(j,1)-thetav(j,1)
+      thetav(j,kt+1) = thetavo(j,kt+1)+thetavo(j,kt)-thetav(j,kt)
       pi(j,0) = pi(j,1)
       pi(j,kt+1) = pi(j,kt)
       end do
@@ -421,8 +423,8 @@ contains
             theta(j,5:6) = theta(j,5:6) + (.05*2.4)*cos((2*3.14159/L)*j*dj)
       end do
 
-      do k=1, kt
-            do j=1, jt
+      do k=0, kt+1
+            do j=0, jt+1
                   thetavo(j,k) = thetao(j,k)*(1.+0.61*qvo)
                   thetav(j,k) = thetavo(j,k)
                   qw(j,k) = qc(j,k)+qv(j,k)
