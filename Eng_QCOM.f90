@@ -233,7 +233,7 @@ contains
       fv(J,K,N2)  = - (v(j,k)*((v(j+1,k)-v(j-1,k))/(2.*dj)))                    &
                     - (((((w(j,k)+w(j+1,k))/2.)*((v(j,k+1)-v(j,k))/dk))        &
                      +(((w(j,k-1)+w(j+1,k-1))/2.)*((v(j,k)-v(j,k-1))/dk)))/2.) &
-                    - (Cp*thetao(j,k)*(pi(j+1,k) - pi(j,k))/dj)                &
+                    - (Cp*thetavo(j,k)*(pi(j+1,k) - pi(j,k))/dj)                &
                     + (ekv*(v(j,k+1) - (2.*v(j,k)) + v(j,k-1)) / (dk**2.))      &
                     + (ekv*(v(j+1,k) - (2.*v(j,k)) + v(j-1,k)) / (dj**2.))
       END DO
