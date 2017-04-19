@@ -329,6 +329,7 @@ contains
 
       thetav(j,k) = theta(j,k) + thetao(j,k)*((0.61*qv)-qc)
 
+      CALL ADJUST (theta(j,k), qv(j,k), qc(j,k), pio(j,k))
       END DO
       END DO
 
