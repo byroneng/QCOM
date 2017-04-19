@@ -1,4 +1,4 @@
-      SUBROUTINE ADJUST ( TH, QV, QC, PBAR )
+      SUBROUTINE ADJUST ( theta, qv, qc, PBAR )
 c     SUBROUTINE ADJUST ( TH, QV, QC, PBAR, qvs )
 c
 c     Performs an isobaric moist adiabatic adjustment.
@@ -36,7 +36,7 @@ c
 c      REAL * 8 QV2
       DATA HLF/2.500E+06/,CP/1004.5/
       DATA rgas/287.04/,pzero/100000./
-      DATA ITTMAX/10/,DTCRIT/0.001/
+      DATA ITTMAX/1/,DTCRIT/0.001/
 C
 C     PBAR IS A ( HYDROSTATIC ) REFERENCE PRESSURE FIELD.
 C
@@ -44,8 +44,8 @@ C
       pibar = ( pbar / pzero ) ** ( rgas / cp )
       GAMMA = HLF / ( CP * PIBAR )
 C
-      THSTAR = TH
-      QVSTAR = QV
+      THSTAR = theta
+      QVSTAR = qv
 C
    30 Tstar = THSTAR * PIBAR
       es1 = es ( Tstar )
@@ -59,7 +59,7 @@ C
       QV1 = QVSAT + ALPHA * ( TH1 - THSTAR )
 c     statement below gives same result as one above
 c     QV1 = QVSTAR - ( TH1 - THSTAR ) / GAMMA
-      QW1 = QV + QC
+      QW1 = qv + qc
       QC1 = QW1 - QV1
 C
       QVS1 = QV1
@@ -74,9 +74,9 @@ C
       DT = ( TH1 - THSTAR ) * PIBAR
 C
       IF ( ABS( DT ) .LT. DTCRIT .OR. ITT .EQ. ITTMAX ) then
-        TH = TH1
-        QV = QV1
-        QC = QC1
+        theta = TH1
+        qv = QV1
+        qc = QC1
         QVS = QVS1
         return
       endif
