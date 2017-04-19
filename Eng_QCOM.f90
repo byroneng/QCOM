@@ -56,6 +56,7 @@ program qcom
       real, dimension (0:jth+1, 0:kth+1) :: qvo
       real, dimension (0:jth+1, 0:kth+1) :: qc
       real, dimension (0:jth+1, 0:kth+1) :: qw
+      real, dimension (1:jth, 1:kth, 2) :: fqw
 
       parameter (tmax = 3000., dt = .1) 
       parameter (ITTMAX = tmax/dt, Nout = 10)
@@ -291,6 +292,17 @@ contains
                         + (ekth*(thetal(j+1,k) - (2.*thetal(j,k)) + thetal(j-1,k)) / (dj**2.))   &
                         - (0.5*(w(j,k)  *(thetal(j,k+1) - thetal(j,k  ))                     &
                             + (w(j,k-1)*(thetal(j,k  ) - thetal(j,k-1)))) / dk)
+      end do
+      end do 
+
+      do k=1, kt
+      do j=1,jt
+      fqw(j,k,N2) = - (((v(j,k)*((qw(j+1,k)-qw(j,k))/dj))                          &
+                           +(v(j-1,k)*((qw(j,k)-qw(j-1,k))/dj)))/2.)                   &
+                        + (ekth*(qw(J,k+1) - (2.*qw(J,k)) + qw(J,k-1)) / (dk**2.))   &
+                        + (ekth*(qw(j+1,k) - (2.*qw(j,k)) + qw(j-1,k)) / (dj**2.))   &
+                        - (0.5*(w(j,k)  *(qw(j,k+1) - qw(j,k  ))                     &
+                            + (w(j,k-1)*(qw(j,k  ) - qw(j,k-1)))) / dk)
       end do
       end do            
 
