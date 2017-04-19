@@ -14,7 +14,7 @@ program qcom
 !     Added f90 declarations and procedures.
 
 
-      real dk, ekth, ekp, ekv, qv, qc, qvo
+      real dk, ekth, ekp, ekv
       real th0, Cs, H, L, dj
 
       !!! Parameters
@@ -49,6 +49,10 @@ program qcom
 
       real, dimension (0:jp+1, 0:kp+1) :: pi
       real, dimension (1:jp, 1:kp, 2) :: fpi
+
+      real, dimension (0:jth+1, 0:kth+1) :: qv
+      real, dimension (0:jth+1, 0:kth+1) :: qvo
+      real, dimension (0:jth+1, 0:kth+1) :: qc
 
       parameter (tmax = 3000., dt = .1) 
       parameter (ITTMAX = tmax/dt, Nout = 10)
@@ -245,8 +249,9 @@ contains
       fw(j,k,N2) = - (((((v(j,k+1)+v(j,k))/2.)*((w(j+1,k)-w(j,k))/dj))               &
                         +(((v(j-1,k+1)+v(j-1,k))/2.)*((w(j,k)-w(j-1,k))/dj)))/2.)    &
             - (w(j,k)*((w(j,k+1)-w(j,k-1))/(2.*dk)))                                  &
-            - (Cp*(thetao(j,k+1)+thetao(j,k))*0.5*(pi(j,k+1)-pi(j,k))/dk)        &
-            + (g*((((theta(j,k+1) + theta(j,k)))/((thetao(j,k+1)+thetao(j,k))))-1.))  &
+            - (Cp*(thetavo(j,k+1)+thetao(j,k))*0.5*(pi(j,k+1)-pi(j,k))/dk)        &
+            + (g*((((theta(j,k+1) + theta(j,k)))/((thetao(j,k+1)+thetao(j,k))))-1.   &
+                  +0.61*(qv(j,k)-qvo(j,k))-qc(j,k)))                              &
             + (ekp*(w(j,k+1) - (2.*w(j,k)) + w(j,k-1)) / (dk**2.))                    &
             + (ekp*(w(j+1,k) - (2.*w(j,k)) + w(j-1,k)) / (dj**2.))
       END DO
@@ -359,6 +364,7 @@ contains
             v(:,k) = 0.0
             w(:,k) = 0.0
             pi(:,k) = 0.0
+            qc(:,k) = 0.0
       end do
 
       do k=1, kt
@@ -383,6 +389,7 @@ contains
                   thetav(j,k) = thetavo(j,k)
             end do
       end do
+
 
 
     
