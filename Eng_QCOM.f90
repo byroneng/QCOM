@@ -46,6 +46,7 @@ program qcom
       real, dimension (0:jth+1, 0:kth+1) :: thetav
       real, dimension (0:jth+1, 0:kth+1) :: thetavo
       real, dimension (0:jth+1, 0:kth+1) :: thetal
+      real, dimension (1:jth, 1:kth, 2) :: fthetal
 
       real, dimension (0:jp+1, 0:kp+1) :: pio
       real, dimension (0:jp+1, 0:kp+1) :: pi
@@ -275,12 +276,23 @@ contains
 
       DO K = 1, KT
       DO J = 1, JT
-      fpi(j,k,N2) = -((Cs**2.)/(Cp*(thetao(j,k)**2.)))                              &
+      fpi(j,k,N2) = -((Cs**2.)/(Cp*(thetavo(j,k)**2.)))                              &
                   * ((((thetavo(j,k)*v(j,k)) - (thetavo(j,k)*v(j-1,k))) / dj)      &
                   + (((thetavo(j,k+1) + thetavo(j,k))*w(j,k)) - ((thetavo(j,k) + thetavo(j,k-1))*w(j,k-1)))/(2.*dk))
 
       END DO
       END DO
+
+      do k=1, kt
+      do j=1,jt
+      fthetal(j,k,N2) = - (((v(j,k)*((thetal(j+1,k)-thetal(j,k))/dj))                          &
+                           +(v(j-1,k)*((thetal(j,k)-thetal(j-1,k))/dj)))/2.)                   &
+                        + (ekth*(thetal(J,k+1) - (2.*thetal(J,k)) + thetal(J,k-1)) / (dk**2.))   &
+                        + (ekth*(thetal(j+1,k) - (2.*thetal(j,k)) + thetal(j-1,k)) / (dj**2.))   &
+                        - (0.5*(w(j,k)  *(thetal(j,k+1) - thetal(j,k  ))                     &
+                            + (w(j,k-1)*(thetal(j,k  ) - thetal(j,k-1)))) / dk)
+      end do
+      end do            
 
 
 !     ETC (forcing for w, theta, and pi)
@@ -299,6 +311,7 @@ contains
       V(J,K)     = V(J,K)     + (DT  * (A * FV(J,K,N2)     + B * FV(J,K,N1)))
       w(j,k)     = w(j,k)     + (DT  * (A * fw(j,k,N2)     + B * fw(j,k,N1)))
       theta(J,K) = theta(J,K) + (DT  * (A * ftheta(J,K,N2) + B * ftheta(J,K,N1)))
+      thetal(J,K) = thetal(J,K) + (DT  * (A * fthetal(J,K,N2) + B * fthetal(J,K,N1)))
       pi(j,k)    = pi(j,k)    + (DT  * (A * fpi(j,k,N2)    + B * fpi(j,k,N1)))
       END DO
       END DO
@@ -375,11 +388,13 @@ contains
 
       do k=1, kt
             ftheta(:,k,1) = 0.0
+            fthetal(:,k,1) = 0.0
             fv(:,k,1) = 0.0
             fw(:,k,1) = 0.0
             fpi(:,k,1) = 0.0
 
             ftheta(:,k,2) = 0.0
+            fthetal(:,k,2) = 0.0
             fv(:,k,2) = 0.0
             fw(:,k,2) = 0.0
             fpi(:,k,2) = 0.0
