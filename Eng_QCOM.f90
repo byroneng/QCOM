@@ -325,8 +325,10 @@ contains
       theta(J,K) = theta(J,K) + (DT  * (A * ftheta(J,K,N2) + B * ftheta(J,K,N1)))
       thetal(J,K) = thetal(J,K) + (DT  * (A * fthetal(J,K,N2) + B * fthetal(J,K,N1)))
       pi(j,k)    = pi(j,k)    + (DT  * (A * fpi(j,k,N2)    + B * fpi(j,k,N1)))
+      qw(j,k)     = qw(j,k)     + (DT  * (A * fqw(j,k,N2)     + B * fqw(j,k,N1)))
 
       thetav(j,k) = theta(j,k) + thetao(j,k)*((0.61*qv)-qc)
+
       END DO
       END DO
 
