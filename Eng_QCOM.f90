@@ -1,7 +1,7 @@
 program qcom
 
 !     gfortran -c adjust.f
-!     gfortran -o qcomcloud -fdefault-real-8 -Wall -fcheck=all Eng_QCOM_nonlinear.f90 adjust.o
+!     gfortran -o qcomcloud -fdefault-real-8 -Wall -fcheck=all Eng_QCOM.f90 adjust.o
 
 !     pgf90 -c print.f
 !     pgf90 -o qcom QCOM.f90 print.o
@@ -60,7 +60,7 @@ program qcom
       real, dimension (1:jth, 1:kth, 2) :: fqw
 
       parameter (tmax = 3000., dt = .1) 
-      parameter (ITTMAX = tmax/dt, Nout = 10)
+      parameter (ITTMAX = int(tmax/dt), Nout = 10)
 
       CALL INIT
 
@@ -328,7 +328,7 @@ contains
       pi(j,k)    = pi(j,k)    + (DT  * (A * fpi(j,k,N2)    + B * fpi(j,k,N1)))
       qw(j,k)     = qw(j,k)     + (DT  * (A * fqw(j,k,N2)     + B * fqw(j,k,N1)))
 
-      thetav(j,k) = theta(j,k) + thetao(j,k)*((0.61*qv)-qc)
+      thetav(j,k) = theta(j,k) + thetao(j,k)*((0.61*qv(j,k))-qc(j,k))
 
       CALL ADJUST (theta(j,k), qv(j,k), qc(j,k), pio(j,k))
       END DO
@@ -403,7 +403,7 @@ contains
             
 !     initialize all variables 
 
-      debug = .false.
+      debug = .true.
       animate = .false.
       ekth = 50. !eddy viscosity
       ekv  = 50.
@@ -448,7 +448,7 @@ contains
 
       do k=0, kt+1
             do j=0, jt+1
-                  thetavo(j,k) = thetao(j,k)*(1.+0.61*qvo)
+                  thetavo(j,k) = thetao(j,k)*(1.+0.61*qvo(j,k))
                   thetav(j,k) = thetavo(j,k)
                   qw(j,k) = qc(j,k)+qv(j,k)
                   pio(j,k) = - (g/(Cp*thetavo(j,k)))
