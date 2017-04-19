@@ -380,8 +380,11 @@ contains
       do k=1, kt
             do j=1, jt
                   thetavo(j,k) = thetao(j,k)*(1.+0.61*qvo)
+                  thetav(j,k) = thetavo(j,k)
             end do
       end do
+
+
     
       CALL BOUND
 
