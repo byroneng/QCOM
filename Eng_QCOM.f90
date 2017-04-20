@@ -16,7 +16,7 @@ program qcom
 
 
       real dk, ekth, ekp, ekv, La
-      real th0, Cs, H, L, dj
+      real th0, Cs, H, L, dj, qvs
 
       !!! Parameters
       integer jt, kt, jv, kv, jw, kw, jth, kth, jp, kp, ittmax, Nout, j, k, ITTNOW
@@ -59,7 +59,7 @@ program qcom
       real, dimension (0:jth+1, 0:kth+1) :: qw
       real, dimension (1:jth, 1:kth, 2) :: fqw
 
-      parameter (tmax = 3000., dt = .1) 
+      parameter (tmax = 100., dt = .1) 
       parameter (ITTMAX = int(tmax/dt), Nout = 10)
 
       CALL INIT
@@ -339,8 +339,8 @@ contains
       thetav(j,k) = theta(j,k) + thetao(j,k)*((0.61*qv(j,k))-qc(j,k))
 
       write(*,*) 'before: theta = ',theta(5,5), 'qv = ',qv(5,5),'qc = ',qc(5,5)
-      CALL ADJUST (theta(j,k), qv(j,k), qc(j,k), pio(j,k))
-      write(*,*) 'after:  theta = ',theta(5,5), 'qv = ',qv(5,5),'qc = ',qc(5,5)
+      CALL ADJUST (theta(j,k), qv(j,k), qc(j,k), pio(j,k), qvs)
+      write(*,*) 'after:  theta = ',theta(5,5), 'qv = ',qv(5,5),'qc = ',qc(5,5),'qvs = ',qvs
 
       END DO
       END DO
@@ -439,6 +439,9 @@ contains
             qv(:,k) = qvo(:,k)
       end do
 
+      thetao(10,0) = 288.+20. !solar panel
+      theta(10,0) = 288.+20.
+
       do k=1, kt
             ftheta(:,k,1) = 0.0
             fthetal(:,k,1) = 0.0
@@ -453,9 +456,9 @@ contains
             fpi(:,k,2) = 0.0
       end do
 
-      do j=1, jt
-            theta(j,5:6) = theta(j,5:6) + (.05*2.4)*cos((2*3.14159/L)*j*dj)
-      end do
+!       do j=1, jt
+!             theta(j,5:6) = theta(j,5:6) + (.05*2.4)*cos((2*3.14159/L)*j*dj)
+!       end do
 
       do k=0, kt+1
             do j=0, jt+1

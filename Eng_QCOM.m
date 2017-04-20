@@ -8,6 +8,7 @@ close all
 animate = false;
 plotKE = false;
 plotPROFILES = false;
+normalize = true; %also makes the clouds look better
 
 %% Read in the data
 v = dlmread('v.dat');
@@ -27,18 +28,21 @@ if plotKE
 end
 
 %Normalize
+if normalize
 v = v/max(max(v));
 w = w/max(max(w));
 theta = theta/max(max(theta));
 Pi = Pi/max(max(Pi));
-
+end %if normalize
 
 %%Plots
 figure('OuterPosition',[0 0 900 800])
 
 subplot(2,2,1)
 contourf(v);
-set(gca, 'Clim', [-1 1])
+if normalize
+    set(gca, 'Clim', [-1 1])
+end% if normalize
 colorbar
 ch = colormap;
 ch(64,1:3) = 1;
@@ -53,7 +57,9 @@ hold off
 
 subplot(2,2,2)
 contourf(w)
-set(gca, 'Clim', [-1 1])
+if normalize
+    set(gca, 'Clim', [-1 1])
+end% if normalize
 colorbar
 title('w')
 hold on
@@ -64,7 +70,9 @@ hold off
 
 subplot(2,2,3)
 contourf(theta)
-set(gca, 'Clim', [-1 1])
+if normalize
+    set(gca, 'Clim', [-1 1])
+end% if normalize
 colorbar
 title('theta')
 hold on
@@ -75,7 +83,9 @@ hold off
 
 subplot(2,2,4)
 contourf(Pi)
-set(gca, 'Clim', [-1 1])
+if normalize
+    set(gca, 'Clim', [-1 1])
+end% if normalize
 colorbar
 title('\pi')
 hold on
