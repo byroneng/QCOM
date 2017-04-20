@@ -129,6 +129,11 @@ program qcom
                   end do
            close(94)
 
+           open(95, file='qc.dat') ! Open file 'qc.dat'
+                  do k=0, kt+1
+                        write(95,*) qc(:,k)
+                  end do
+
            close(81)
            close(82)
            close(83)
@@ -206,17 +211,20 @@ contains
                   open(72, file='aw.dat', action='write',position='append')
                   open(73, file='atheta.dat', action='write',position='append')
                   open(74, file='api.dat', action='write',position='append')
+                  open(75, file='aqc.dat', action='write',position='append')
             
                         do k=0, kt+1
                               write(71,*) v(:,k)
                               write(72,*) w(:,k)
                               write(73,*) theta(:,k)
                               write(74,*) pi(:,k)
+                              write(75,*) qc(:,k)
                         end do
                   close(71)
                   close(72)
                   close(73)
                   close(74)
+                  close(75)
 
                   !Stop animation output if model blows up
                   if (isnan(v(5,5))) then !checks for NaNs
@@ -330,7 +338,10 @@ contains
 
       thetav(j,k) = theta(j,k) + thetao(j,k)*((0.61*qv(j,k))-qc(j,k))
 
+      write(*,*) 'before: theta = ',theta(5,5), 'qv = ',qv(5,5),'qc = ',qc(5,5)
       CALL ADJUST (theta(j,k), qv(j,k), qc(j,k), pio(j,k))
+      write(*,*) 'after:  theta = ',theta(5,5), 'qv = ',qv(5,5),'qc = ',qc(5,5)
+
       END DO
       END DO
 
@@ -403,7 +414,7 @@ contains
             
 !     initialize all variables 
 
-      debug = .true.
+      debug = .false.
       animate = .false.
       ekth = 50. !eddy viscosity
       ekv  = 50.
@@ -424,7 +435,7 @@ contains
             w(:,k) = 0.0
             pi(:,k) = 0.0
             qc(:,k) = 0.0
-            qvo(:,k) = 0.03
+            qvo(:,k) = 0.007
             qv(:,k) = qvo(:,k)
       end do
 
@@ -466,16 +477,19 @@ contains
             open(72, file='aw.dat', action='write',position='rewind')
             open(73, file='atheta.dat', action='write',position='rewind')
             open(74, file='api.dat', action='write',position='rewind')
+            open(75, file='aqc.dat', action='write',position='rewind')
                         do k=0, kt+1
                               write(71,*) v(:,k)
                               write(72,*) w(:,k)
                               write(73,*) theta(:,k)
                               write(74,*) pi(:,k)
+                              write(75,*) qc(:,k)
                         end do
                   close(71)
                   close(72)
                   close(73)
                   close(74)
+                  close(75)
       end if
       END SUBROUTINE Init
       
