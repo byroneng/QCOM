@@ -59,7 +59,7 @@ program qcom
       real, dimension (0:jth+1, 0:kth+1) :: qw
       real, dimension (1:jth, 1:kth, 2) :: fqw
 
-      parameter (tmax = 100., dt = .1) 
+      parameter (tmax = 5000., dt = .1) 
       parameter (ITTMAX = int(tmax/dt), Nout = 10)
 
       CALL INIT
@@ -67,7 +67,6 @@ program qcom
       ITT = 1 ! itt is time step index
 
 !     USE FORWARD SCHEME TO do first step
-
       A = 1.
       B = 0.
       N1 = MOD ( ITT    , 2 ) + 1
@@ -94,7 +93,6 @@ program qcom
       N1 = MOD ( ITT    , 2 ) + 1   !N1 and N2 alternnate values of 1 and 2 here
       N2 = MOD ( ITT - 1, 2 ) + 1
 
-
       CALL STEP ( N1, N2, A, B ) ! do subsequent time steps
 
       end do
@@ -118,7 +116,7 @@ program qcom
 
             open(93, file='theta.dat') ! Open the file 'theta.dat'
                   do k=0, kt+1
-                        write(93,*) theta(:,k)-thetao(:,k)
+                        write(93,*) thetav(:,k)-thetavo(:,k)
                   end do
             close(93)
 
@@ -192,7 +190,7 @@ contains
       CALL AB ( N1, N2, A, B ) ! update variables using a time scheme
       CALL BOUND ! apply boundary conditions to variables
 
-      if (mod(itt*1.,300.) .eq. 0) then
+      if (mod(itt*1.,50.) .eq. 0) then
 
             write(81,*) sum(v)
 
@@ -216,7 +214,7 @@ contains
                         do k=0, kt+1
                               write(71,*) v(:,k)
                               write(72,*) w(:,k)
-                              write(73,*) theta(:,k)
+                              write(73,*) thetav(:,k)
                               write(74,*) pi(:,k)
                               write(75,*) qc(:,k)
                         end do
@@ -336,11 +334,29 @@ contains
       pi(j,k)    = pi(j,k)    + (DT  * (A * fpi(j,k,N2)    + B * fpi(j,k,N1)))
       qw(j,k)     = qw(j,k)     + (DT  * (A * fqw(j,k,N2)     + B * fqw(j,k,N1)))
 
-      thetav(j,k) = theta(j,k) + thetao(j,k)*((0.61*qv(j,k))-qc(j,k))
+!            qv(j,k) = qv(j,k) + .00001!!!!!!!!!!!!!!!!!!!!!!!!!!
+!            qc(j,k) = qc(j,k) + 0.007*(exp((k*dk)/(kt*dk)))
 
-      write(*,*) 'before: theta = ',theta(5,5), 'qv = ',qv(5,5),'qc = ',qc(5,5)
-      CALL ADJUST (theta(j,k), qv(j,k), qc(j,k), pio(j,k), qvs)
-      write(*,*) 'after:  theta = ',theta(5,5), 'qv = ',qv(5,5),'qc = ',qc(5,5),'qvs = ',qvs
+      write(*,*) 'before: thetal = ',thetal(j,k), 'qw = ', qw(j,k),'qv = ',qv(j,k),'qc = ',qc(j,k),'qvs = ',qvs
+      CALL ADJUST (thetal(j,k), qw(j,k), qc(j,k), pio(j,k), qvs)
+      write(*,*) 'after:  thetal = ',thetal(j,k), 'qw = ', qw(j,k),'qv = ',qv(j,k),'qc = ',qc(j,k), 'qvs = ',qvs
+
+      if (qw(j,k) .gt. qvs) then
+            qv(j,k) = qvs
+            qc(j,k) = qw(j,k) - qv(j,k)
+            theta(j,k) = thetal(j,k) + ((L/(Cp*pio(j,k))*qc(j,k)))
+      else
+            qc(j,k) = 0
+            qv(j,k) = qw(j,k)
+            theta(j,k) = thetal(j,k)
+      end if
+
+      thetav(j,k) = theta(j,k) + thetao(j,k)*((0.61*qv(j,k))-qc(j,k))
+      
+                  if ((isnan(v(j,k))) .or. (isnan(w(j,k)))) then !checks for NaNs
+                        write(*,*) "Model blew up at time = ",itt*dt," seconds"
+                        stop
+                  end if
 
       END DO
       END DO
@@ -415,7 +431,7 @@ contains
 !     initialize all variables 
 
       debug = .false.
-      animate = .false.
+      animate = .true.
       ekth = 50. !eddy viscosity
       ekv  = 50.
       ekp  = 50.
@@ -426,6 +442,7 @@ contains
       dk = H/real(kt) !Vertical gridsize
       dj = L/real(jt) !y- gridsize
       La = 2.5e6 !J K^-1 kg^1
+      qvs = .007
 
 
       do k=0, kt+1
@@ -434,8 +451,8 @@ contains
             v(:,k) = 0.0
             w(:,k) = 0.0
             pi(:,k) = 0.0
-            qc(:,k) = 0.0
-            qvo(:,k) = 0.007
+            qc(:,k) = 0.0!07*(exp((k*dk)/(kt*dk)))
+            qvo(:,k) = 50.*qvs
             qv(:,k) = qvo(:,k)
       end do
 
@@ -462,10 +479,10 @@ contains
 
       do k=0, kt+1
             do j=0, jt+1
-                  thetavo(j,k) = thetao(j,k)*(1.+0.61*qvo(j,k))
+                  thetavo(j,k) = thetao(j,k)*(1.+(0.61*qvo(j,k)))
                   thetav(j,k) = thetavo(j,k)
                   qw(j,k) = qc(j,k)+qv(j,k)
-                  pio(j,k) = - (g/(Cp*thetavo(j,k)))
+                  pio(j,k) = 100000. - (g/(Cp*thetavo(j,k)))
                   thetal(j,k) = theta(j,k) - ((La/(Cp*pio(j,k)))*qc(j,k))
             end do
       end do
@@ -484,7 +501,7 @@ contains
                         do k=0, kt+1
                               write(71,*) v(:,k)
                               write(72,*) w(:,k)
-                              write(73,*) theta(:,k)
+                              write(73,*) thetav(:,k)
                               write(74,*) pi(:,k)
                               write(75,*) qc(:,k)
                         end do
