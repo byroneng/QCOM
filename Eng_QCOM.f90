@@ -59,7 +59,7 @@ program qcom
       real, dimension (0:jth+1, 0:kth+1) :: qw
       real, dimension (1:jth, 1:kth, 2) :: fqw
 
-      parameter (tmax = 200., dt = .1) 
+      parameter (tmax = 2000., dt = .1) 
       parameter (ITTMAX = int(tmax/dt), Nout = 10)
 
       CALL INIT
