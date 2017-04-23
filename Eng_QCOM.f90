@@ -15,8 +15,8 @@ program qcom
 !     Added f90 declarations and procedures.
 
 
-      real dk, ekth, ekp, ekv, La
-      real th0, Cs, H, L, dj, qvs
+      real dk, ekth, ekp, ekv, La, es
+      real th0, Cs, H, L, dj, qvs, T
 
       !!! Parameters
       integer jt, kt, jv, kv, jw, kw, jth, kth, jp, kp, ittmax, Nout, j, k, ITTNOW
@@ -25,7 +25,7 @@ program qcom
 
       logical animate, debug
       parameter (jt = 20, kt = 10, jv = jt, kv = kt)
-      parameter (Cp=1005., g=9.8)
+      parameter (Cp=1005., g=9.8, rgas=287.04)
       real, dimension (0:jv+1, 0:kv+1) :: v
       real, dimension (1:jv, 1:kv, 2) :: fv
 
@@ -59,7 +59,7 @@ program qcom
       real, dimension (0:jth+1, 0:kth+1) :: qw
       real, dimension (1:jth, 1:kth, 2) :: fqw
 
-      parameter (tmax = 5000., dt = .1) 
+      parameter (tmax = 2000., dt = .1) 
       parameter (ITTMAX = int(tmax/dt), Nout = 10)
 
       CALL INIT
@@ -190,7 +190,7 @@ contains
       CALL AB ( N1, N2, A, B ) ! update variables using a time scheme
       CALL BOUND ! apply boundary conditions to variables
 
-      if (mod(itt*1.,50.) .eq. 0) then
+      if (mod(itt*1.,500.) .eq. 0) then
 
             write(81,*) sum(v)
 
@@ -214,7 +214,7 @@ contains
                         do k=0, kt+1
                               write(71,*) v(:,k)
                               write(72,*) w(:,k)
-                              write(73,*) thetav(:,k)
+                              write(73,*) thetal(:,k)
                               write(74,*) pi(:,k)
                               write(75,*) qc(:,k)
                         end do
@@ -337,6 +337,22 @@ contains
 !            qv(j,k) = qv(j,k) + .00001!!!!!!!!!!!!!!!!!!!!!!!!!!
 !            qc(j,k) = qc(j,k) + 0.007*(exp((k*dk)/(kt*dk)))
 
+! CALL ADJUST
+
+      T = thetal(j,k) * (( pio(j,k) / 100000. ) ** ( rgas / cp ))
+
+      !Wexler's Formula
+      es = exp(   (-0.29912729e4  *((T)**(-2)))  + &
+      (-0.60170128e4  *((T)**(-1)))  + &
+            ( 0.1887643854e2*((T)**( 0)))  + & 
+            (-0.28354721e-1 *((T)**( 1)))  + &
+            ( 0.17838301e-4 *((T)**( 2)))  + &
+            (-0.84150417e-9 *((T)**( 3)))  + &
+            ( 0.44412543e-12*((T)**( 4)))  + &
+            ( 0.2858487e1*log( T)))
+
+      qvs = 0.622*(es/(pio(j,k)-es))
+
       write(*,*) 'before: thetal = ',thetal(j,k), 'qw = ', qw(j,k),'qv = ',qv(j,k),'qc = ',qc(j,k),'qvs = ',qvs
       CALL ADJUST (thetal(j,k), qw(j,k), qc(j,k), pio(j,k), qvs)
       write(*,*) 'after:  thetal = ',thetal(j,k), 'qw = ', qw(j,k),'qv = ',qv(j,k),'qc = ',qc(j,k), 'qvs = ',qvs
@@ -442,7 +458,7 @@ contains
       dk = H/real(kt) !Vertical gridsize
       dj = L/real(jt) !y- gridsize
       La = 2.5e6 !J K^-1 kg^1
-      qvs = .007
+      qvs = .009
 
 
       do k=0, kt+1
@@ -452,7 +468,7 @@ contains
             w(:,k) = 0.0
             pi(:,k) = 0.0
             qc(:,k) = 0.0!07*(exp((k*dk)/(kt*dk)))
-            qvo(:,k) = 50.*qvs
+            qvo(:,k) = 1.0*qvs
             qv(:,k) = qvo(:,k)
       end do
 
@@ -501,7 +517,7 @@ contains
                         do k=0, kt+1
                               write(71,*) v(:,k)
                               write(72,*) w(:,k)
-                              write(73,*) thetav(:,k)
+                              write(73,*) thetal(:,k)
                               write(74,*) pi(:,k)
                               write(75,*) qc(:,k)
                         end do
