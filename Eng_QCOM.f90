@@ -16,7 +16,7 @@ program qcom
 
 
       real dk, ekth, ekp, ekv, La, es
-      real th0, Cs, H, L, dj, qvs, T
+      real th0, Cs, H, L, dj, qvs, T, RELHUM
 
       !!! Parameters
       integer jt, kt, jv, kv, jw, kw, jth, kth, jp, kp, ittmax, Nout, j, k, ITTNOW
@@ -59,7 +59,7 @@ program qcom
       real, dimension (0:jth+1, 0:kth+1) :: qw
       real, dimension (1:jth, 1:kth, 2) :: fqw
 
-      parameter (tmax = 2000., dt = .1) 
+      parameter (tmax = 1000., dt = .1) 
       parameter (ITTMAX = int(tmax/dt), Nout = 10)
 
       CALL INIT
@@ -459,6 +459,7 @@ contains
       dj = L/real(jt) !y- gridsize
       La = 2.5e6 !J K^-1 kg^1
       qvs = .009
+      RELHUM = .99 !Initial relative humidity
 
 
       do k=0, kt+1
@@ -468,12 +469,7 @@ contains
             w(:,k) = 0.0
             pi(:,k) = 0.0
             qc(:,k) = 0.0!07*(exp((k*dk)/(kt*dk)))
-            qvo(:,k) = 1.0*qvs
-            qv(:,k) = qvo(:,k)
       end do
-
-      thetao(10,0) = 288.+20. !solar panel
-      theta(10,0) = 288.+20.
 
       do k=1, kt
             ftheta(:,k,1) = 0.0
@@ -497,14 +493,34 @@ contains
             do j=0, jt+1
                   thetavo(j,k) = thetao(j,k)*(1.+(0.61*qvo(j,k)))
                   thetav(j,k) = thetavo(j,k)
-                  qw(j,k) = qc(j,k)+qv(j,k)
                   pio(j,k) = 100000. - (g/(Cp*thetavo(j,k)))
                   thetal(j,k) = theta(j,k) - ((La/(Cp*pio(j,k)))*qc(j,k))
             end do
       end do
 
+      do k=1,kt
+            do j=1,jt
+            T = thetal(j,k) * (( pio(j,k) / 100000. ) ** ( rgas / cp ))
 
+            !Wexler's Formula
+            es = exp(   (-0.29912729e4  *((T)**(-2)))  + &
+            (-0.60170128e4  *((T)**(-1)))  + &
+                  ( 0.1887643854e2*((T)**( 0)))  + & 
+                  (-0.28354721e-1 *((T)**( 1)))  + &
+                  ( 0.17838301e-4 *((T)**( 2)))  + &
+                  (-0.84150417e-9 *((T)**( 3)))  + &
+                  ( 0.44412543e-12*((T)**( 4)))  + &
+                  ( 0.2858487e1*log( T)))
 
+            qvs = 0.622*(es/(pio(j,k)-es))
+            qvo(j,k) = RELHUM*qvs
+            qv(j,k) = qvo(j,k)
+            qw(j,k) = qc(j,k)+qv(j,k)
+            end do
+      end do
+
+      thetao(10,0) = 288.+20. !solar panel
+      theta(10,0) = 288.+20.
     
       CALL BOUND
 
