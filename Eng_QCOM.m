@@ -218,10 +218,11 @@ if animate
             hold off
 
         subplot(2,2,3)
+            athetanow = atheta((i-1)*gridht + (1:gridht),:);
             if normalize
-            atheta((i-1)*gridht + (1:gridht),:) = atheta(((i-1)*gridht) + (1:gridht),:)/max(max(atheta((i-1)*gridht + (1:gridht),:)));
+                athetanow = athetanow/max(max(athetanow));
             end %if normalize
-            contourf(atheta((i-1)*gridht + (1:gridht),:))
+            contourf(athetanow)
             if normalize
                 set(gca, 'Clim', [-1 1])
             end% if normalize
@@ -229,7 +230,7 @@ if animate
             ch = colormap;
             ch(64,1:3) = 1;
             colormap(ch)
-            title('\theta_l')
+            title('\theta_v - \theta_0')
             hold on
             h = pcolor(ones(12,22));
             alpha(h,(aqc((i-1)*gridht + (1:gridht),:)))

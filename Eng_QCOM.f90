@@ -59,7 +59,7 @@ program qcom
       real, dimension (0:jth+1, 0:kth+1) :: qw
       real, dimension (1:jth, 1:kth, 2) :: fqw
 
-      parameter (tmax = 2000., dt = .1) 
+      parameter (tmax = 200., dt = .1) 
       parameter (ITTMAX = int(tmax/dt), Nout = 10)
 
       CALL INIT
@@ -214,7 +214,7 @@ contains
                         do k=0, kt+1
                               write(71,*) v(:,k)
                               write(72,*) w(:,k)
-                              write(73,*) thetal(:,k)
+                              write(73,*) thetav(:,k)-thetao(:,k)
                               write(74,*) pi(:,k)
                               write(75,*) qc(:,k)
                         end do
@@ -517,7 +517,7 @@ contains
                         do k=0, kt+1
                               write(71,*) v(:,k)
                               write(72,*) w(:,k)
-                              write(73,*) thetal(:,k)
+                              write(73,*) thetav(:,k)-thetao(:,k)
                               write(74,*) pi(:,k)
                               write(75,*) qc(:,k)
                         end do
