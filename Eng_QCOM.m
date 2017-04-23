@@ -5,7 +5,7 @@
 clear all
 close all
 
-animate = false;
+animate = true;
 plotKE = false;
 plotPROFILES = false;
 normalize = true; %also makes the clouds look better
@@ -16,9 +16,8 @@ w = dlmread('w.dat');
 theta = dlmread('theta.dat');
 Pi = dlmread('pi.dat');
 qc = dlmread('qc.dat');
-qctest = (1:12)*.0001;
-qctest = repmat(qctest',1,22);
-qctest = flipud(qctest);
+qc(1,:) = 0;
+qc(end,:) = max(qc);
 
 if plotKE
     tv = dlmread('tv.dat');
@@ -50,7 +49,7 @@ colormap(ch)
 title('v')
 hold on
 h = pcolor(ones(12,22));
-alpha(h,(1-qctest))
+alpha(h,(qc))
 shading flat
 hold off
 
@@ -64,7 +63,7 @@ colorbar
 title('w')
 hold on
 h = pcolor(ones(12,22));
-alpha(h,(1-qctest))
+alpha(h,(qc))
 shading flat
 hold off
 
@@ -74,10 +73,10 @@ if normalize
     set(gca, 'Clim', [-1 1])
 end% if normalize
 colorbar
-title('theta')
+title('\theta_v')
 hold on
 h = pcolor(ones(12,22));
-alpha(h,(1-qctest))
+alpha(h,(qc))
 shading flat
 hold off
 
@@ -90,7 +89,7 @@ colorbar
 title('\pi')
 hold on
 h = pcolor(ones(12,22));
-alpha(h,(1-qctest))
+alpha(h,(qc))
 shading flat
 hold off
 
@@ -169,6 +168,13 @@ if animate
     aw = dlmread('aw.dat');
     atheta = dlmread('atheta.dat');
     aPi = dlmread('api.dat');
+    aqc = dlmread('aqc.dat');
+    
+    %Normalize
+    if normalize
+    av = av/max(max(av));
+    aw = aw/max(max(aw));
+    end %if normalize
     
     gridht = 12;
     nframes = size(av,1)/gridht;
@@ -177,29 +183,79 @@ if animate
     figure(4)
     
     for i=1:nframes
+        aqc((((i-1)*gridht) + 1),:) = 0;
+        aqc(i*gridht,:) = max(max(aqc));
         subplot(2,2,1)
-            contour(av((i-1)*gridht + (1:gridht),:))
-%            caxis([-1.5 1.5])
+            contourf(av((i-1)*gridht + (1:gridht),:))
+            if normalize
+                set(gca, 'Clim', [-1 1])
+            end% if normalize
             colorbar
+            ch = colormap;
+            ch(64,1:3) = 1;
+            colormap(ch)
             title('v')
+            hold on
+            h = pcolor(ones(12,22));
+            alpha(h,(aqc((i-1)*gridht + (1:gridht),:)))
+            shading flat
+            hold off    
 
         subplot(2,2,2)
-            contour(aw((i-1)*gridht + (1:gridht),:))
-%            caxis([-4 4])
+            contourf(aw((i-1)*gridht + (1:gridht),:))
+            if normalize
+                set(gca, 'Clim', [-1 1])
+            end% if normalize
             colorbar
+            ch = colormap;
+            ch(64,1:3) = 1;
+            colormap(ch)
             title('w')
+            hold on
+            h = pcolor(ones(12,22));
+            alpha(h,(aqc((i-1)*gridht + (1:gridht),:)))
+            shading flat
+            hold off
 
         subplot(2,2,3)
-            contour(atheta((i-1)*gridht + (1:gridht),:))
-%            caxis([-10 10])
+            if normalize
+            atheta((i-1)*gridht + (1:gridht),:) = atheta(((i-1)*gridht) + (1:gridht),:)/max(max(atheta((i-1)*gridht + (1:gridht),:)));
+            end %if normalize
+            contourf(atheta((i-1)*gridht + (1:gridht),:))
+            if normalize
+                set(gca, 'Clim', [-1 1])
+            end% if normalize
             colorbar
-            title('theta')
+            ch = colormap;
+            ch(64,1:3) = 1;
+            colormap(ch)
+            title('\theta_l')
+            hold on
+            h = pcolor(ones(12,22));
+            alpha(h,(aqc((i-1)*gridht + (1:gridht),:)))
+            shading flat
+            hold off
 
         subplot(2,2,4)
-            contour(aPi((i-1)*gridht + (1:gridht),:))
-%            caxis([0 .05])
+            if normalize
+                aPi((i-1)*gridht + (1:gridht),:) = ...
+                    aPi((i-1)*gridht + (1:gridht),:)/...
+                    max(max(aPi((i-1)*gridht + (1:gridht),:)));
+            end %if normalize
+            contourf(aPi((i-1)*gridht + (1:gridht),:))
+            if normalize
+                set(gca, 'Clim', [-1 1])
+            end% if normalize
             colorbar
+            ch = colormap;
+            ch(64,1:3) = 1;
+            colormap(ch)
             title('\pi')
+            hold on
+            h = pcolor(ones(12,22));
+            alpha(h,(aqc((i-1)*gridht + (1:gridht),:)))
+            shading flat
+            hold off
             
       drawnow
       frame = getframe(4);
@@ -210,6 +266,9 @@ if animate
       else
           imwrite(imind,cm,filename,'gif','WriteMode','append');
       end %if-else
+      
+      close
+      figure(4)
       
     end %for loop    
 end %if animate
