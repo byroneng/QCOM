@@ -5,10 +5,11 @@
 clear all
 close all
 
-animate = true;
+animate = false;
 plotKE = false;
 plotPROFILES = false;
-normalize = true; %also makes the clouds look better
+normalize = false; %also makes the clouds look better
+cloud = false; %currently only applies to the static plot
 
 %% Read in the data
 v = dlmread('v.dat');
@@ -44,54 +45,77 @@ if normalize
 end% if normalize
 colorbar
 ch = colormap;
-ch(64,1:3) = 1;
+if cloud
+    ch(64,1:3) = 1;
+    hold on
+    h = pcolor(ones(12,22));
+    alpha(h,(qc))
+    hold off
+end% if cloud
 colormap(ch)
-title('v')
-hold on
-h = pcolor(ones(12,22));
-alpha(h,(qc))
 shading flat
-hold off
-
+if normalize
+    title('v','FontSize',16)
+else
+    title('v [m/s]','FontSize',16)
+end
 
 subplot(2,2,2)
 contourf(w)
 if normalize
     set(gca, 'Clim', [-1 1])
 end% if normalize
+if cloud
+    hold on
+    h = pcolor(ones(12,22));
+    alpha(h,(qc))
+    hold off
+end %if cloud
 colorbar
-title('w')
-hold on
-h = pcolor(ones(12,22));
-alpha(h,(qc))
+if normalize
+    title('w','FontSize',16)
+else
+    title('w [m/s]','FontSize',16)
+end
 shading flat
-hold off
 
 subplot(2,2,3)
 contourf(theta)
 if normalize
     set(gca, 'Clim', [-1 1])
 end% if normalize
+if cloud
+    hold on
+    h = pcolor(ones(12,22));
+    alpha(h,(qc))
+    hold off
+end %if cloud
 colorbar
-title('\theta_v')
-hold on
-h = pcolor(ones(12,22));
-alpha(h,(qc))
+if normalize
+    title('\theta_v - \theta_0','FontSize',16)
+else
+    title('\theta_v - \theta_0 [K]','FontSize',16)
+end
 shading flat
-hold off
 
 subplot(2,2,4)
 contourf(Pi)
 if normalize
     set(gca, 'Clim', [-1 1])
 end% if normalize
+if cloud
+    hold on
+    h = pcolor(ones(12,22));
+    alpha(h,(qc))
+    hold off
+end %if cloud
 colorbar
-title('\pi')
-hold on
-h = pcolor(ones(12,22));
-alpha(h,(qc))
+if normalize
+    title('\pi\prime','FontSize',16)
+else
+    title('\pi\prime [Pa]','FontSize',16)
+end
 shading flat
-hold off
 
 if plotKE
 %Kinetic Energy
