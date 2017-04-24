@@ -215,7 +215,7 @@ contains
                   open(74, file='api.dat', action='write',position='append')
                   open(75, file='aqc.dat', action='write',position='append')
             
-                        do k=1, floor(kt*1./5.) !Only the bottom fifth of the domain
+                        do k=0, kt+1 !Only the bottom fifth of the domain
                               write(71,*) v(:,k)
                               write(72,*) w(:,k)
                               write(73,*) thetav(:,k)-thetao(:,k)
@@ -472,7 +472,7 @@ contains
       dj = L/real(jt) !y- gridsize
       La = 2.5e6 !J K^-1 kg^1
       qvs = .009
-      RELHUM = 0.0 !Initial relative humidity
+      RELHUM = 0.99 !Initial relative humidity
 
 
       do k=0, kt+1
@@ -543,7 +543,7 @@ contains
             open(73, file='atheta.dat', action='write',position='rewind')
             open(74, file='api.dat', action='write',position='rewind')
             open(75, file='aqc.dat', action='write',position='rewind')
-                        do k=1, floor(kt*1./5.) !Only the bottom fifth of the domain
+                        do k=0, kt+1 !Only the bottom fifth of the domain
                               write(71,*) v(:,k)
                               write(72,*) w(:,k)
                               write(73,*) thetav(:,k)-thetao(:,k)
