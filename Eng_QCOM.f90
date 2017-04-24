@@ -453,7 +453,7 @@ contains
       ekp  = 50.
       H = 500.
       L = (2.**(3./2.))*H
-      delth = 4.8
+      delth = 0.0
       Cs = 50.
       dk = H/real(kt) !Vertical gridsize
       dj = L/real(jt) !y- gridsize
@@ -519,8 +519,8 @@ contains
             end do
       end do
 
-      thetao(10,0) = 288.+10. !solar panel
-      theta(10,0) = 288.+10.
+      thetao(10,0) = 288.+20. !solar panel
+      theta(10,0) = 288.+20.
     
       CALL BOUND
 
