@@ -5,10 +5,10 @@
 clear all
 close all
 
-animate = false;
+animate = true;
 plotKE = false;
 plotPROFILES = false;
-normalize = false; %also makes the clouds look better
+normalize = true; %also makes the clouds look better
 cloud = false; %currently only applies to the static plot
 
 %% Read in the data
@@ -59,6 +59,7 @@ if normalize
 else
     title('v [m/s]','FontSize',16)
 end
+
 
 subplot(2,2,2)
 contourf(w)
@@ -196,15 +197,15 @@ if animate
     
     %Normalize
     if normalize
-    av = av/max(max(av));
-    aw = aw/max(max(aw));
+    av = av/max(max(v));
+    aw = aw/max(max(w));
     end %if normalize
     
-    gridht = 12;
+    gridht = 20;
     nframes = size(av,1)/gridht;
     filename = 'animated.gif';
     
-    figure(4)
+    figure('OuterPosition',[0 0 1414 1000]) 
     
     for i=1:nframes
         aqc((((i-1)*gridht) + 1),:) = 0;
@@ -216,14 +217,16 @@ if animate
             end% if normalize
             colorbar
             ch = colormap;
-            ch(64,1:3) = 1;
+            if cloud
+                ch(64,1:3) = 1;
+                hold on
+                h = pcolor(ones(12,22));
+                alpha(h,(aqc((i-1)*gridht + (1:gridht),:)))
+                hold off  
+            end %if cloud
             colormap(ch)
-            title('v')
-            hold on
-            h = pcolor(ones(12,22));
-            alpha(h,(aqc((i-1)*gridht + (1:gridht),:)))
+            title('v')  
             shading flat
-            hold off    
 
         subplot(2,2,2)
             contourf(aw((i-1)*gridht + (1:gridht),:))
@@ -232,14 +235,16 @@ if animate
             end% if normalize
             colorbar
             ch = colormap;
-            ch(64,1:3) = 1;
+            if cloud
+                ch(64,1:3) = 1;
+                hold on
+                h = pcolor(ones(12,22));
+                alpha(h,(aqc((i-1)*gridht + (1:gridht),:)))
+                hold off
+            end %if cloud
             colormap(ch)
             title('w')
-            hold on
-            h = pcolor(ones(12,22));
-            alpha(h,(aqc((i-1)*gridht + (1:gridht),:)))
             shading flat
-            hold off
 
         subplot(2,2,3)
             athetanow = atheta((i-1)*gridht + (1:gridht),:);
@@ -252,14 +257,16 @@ if animate
             end% if normalize
             colorbar
             ch = colormap;
-            ch(64,1:3) = 1;
+            if cloud
+                ch(64,1:3) = 1;
+                hold on
+                h = pcolor(ones(12,22));
+                alpha(h,(aqc((i-1)*gridht + (1:gridht),:)))
+                hold off
+            end %if cloud
             colormap(ch)
             title('\theta_v - \theta_0')
-            hold on
-            h = pcolor(ones(12,22));
-            alpha(h,(aqc((i-1)*gridht + (1:gridht),:)))
             shading flat
-            hold off
 
         subplot(2,2,4)
             if normalize
@@ -273,17 +280,19 @@ if animate
             end% if normalize
             colorbar
             ch = colormap;
+            if cloud
             ch(64,1:3) = 1;
-            colormap(ch)
-            title('\pi')
             hold on
             h = pcolor(ones(12,22));
             alpha(h,(aqc((i-1)*gridht + (1:gridht),:)))
-            shading flat
             hold off
+            end %if cloud
+            colormap(ch)
+            title('\pi')
+            shading flat
             
       drawnow
-      frame = getframe(4);
+      frame = getframe(gcf);
       im = frame2im(frame);
       [imind,cm] = rgb2ind(im,256);
       if i == 1;
@@ -293,7 +302,7 @@ if animate
       end %if-else
       
       close
-      figure(4)
+        figure('OuterPosition',[0 0 1414 1000])
       
     end %for loop    
 end %if animate
