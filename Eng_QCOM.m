@@ -9,7 +9,7 @@ animate = true;
 plotKE = false;
 plotPROFILES = false;
 normalize = true; %also makes the clouds look better
-cloud = false; %currently only applies to the static plot
+cloud = true; %currently only applies to the static plot
 
 %% Read in the data
 v = dlmread('v.dat');
@@ -201,7 +201,7 @@ if animate
     aw = aw/max(max(w));
     end %if normalize
     
-    gridht = 20;
+    gridht = 102;
     nframes = size(av,1)/gridht;
     filename = 'animated.gif';
     
@@ -211,7 +211,11 @@ if animate
         aqc((((i-1)*gridht) + 1),:) = 0;
         aqc(i*gridht,:) = max(max(aqc));
         subplot(2,2,1)
-            contourf(av((i-1)*gridht + (1:gridht),:))
+            avnow = av((i-1)*gridht + (1:gridht),:);
+            if normalize
+                avnow = avnow/max(max(avnow));
+            end %if normalize
+            contourf(avnow)
             if normalize
                 set(gca, 'Clim', [-1 1])
             end% if normalize
@@ -229,7 +233,11 @@ if animate
             shading flat
 
         subplot(2,2,2)
-            contourf(aw((i-1)*gridht + (1:gridht),:))
+            awnow = aw((i-1)*gridht + (1:gridht),:);
+            if normalize
+                awnow = awnow/max(max(awnow));
+            end %if normalize
+            contourf(awnow)
             if normalize
                 set(gca, 'Clim', [-1 1])
             end% if normalize
