@@ -59,7 +59,7 @@ program qcom
       real, dimension (0:jth+1, 0:kth+1) :: qw
       real, dimension (1:jth, 1:kth, 2) :: fqw
 
-      parameter (tmax = 1000., dt = .1) 
+      parameter (tmax = 2000., dt = .1) 
       parameter (ITTMAX = int(tmax/dt), Nout = 10)
 
       CALL INIT
@@ -519,8 +519,8 @@ contains
             end do
       end do
 
-      thetao(10,0) = 288.+20. !solar panel
-      theta(10,0) = 288.+20.
+      thetao(10,0) = 288.+10. !solar panel
+      theta(10,0) = 288.+10.
     
       CALL BOUND
 
