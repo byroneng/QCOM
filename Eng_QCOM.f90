@@ -23,8 +23,8 @@ program qcom
       integer itt, N1, N2
       real Cp, g, tmax, dt, delth, a, b
 
-      logical animate, debug
-      parameter (jt = 20, kt = 10, jv = jt, kv = kt)
+      logical animate, debug, cloudtxt
+      parameter (jt = 40, kt = 100, jv = jt, kv = kt)
       parameter (Cp=1005., g=9.8, rgas=287.04)
       real, dimension (0:jv+1, 0:kv+1) :: v
       real, dimension (1:jv, 1:kv, 2) :: fv
@@ -176,7 +176,11 @@ program qcom
                   write(*,*) 'N2=', N2
            end if                                 
 
-      write(*,*) 'End of script, saved tv, tw, ttheta, tpi, v, w, theta, and pi .dat files'
+      write(*,*) 'Saved tv, tw, ttheta, tpi, v, w, theta, and pi .dat files.'
+      if (animate) then
+            write(*,*) 'Saved av, aw, atheta, and api .dat files.'
+      end if
+      write(*,*) 'End of script.'
 
 
 
@@ -211,7 +215,7 @@ contains
                   open(74, file='api.dat', action='write',position='append')
                   open(75, file='aqc.dat', action='write',position='append')
             
-                        do k=0, kt+1
+                        do k=1, floor(kt*1./5.) !Only the bottom fifth of the domain
                               write(71,*) v(:,k)
                               write(72,*) w(:,k)
                               write(73,*) thetav(:,k)-thetao(:,k)
@@ -353,9 +357,17 @@ contains
 
       qvs = 0.622*(es/(pio(j,k)-es))
 
-      write(*,*) 'before: thetal = ',thetal(j,k), 'qw = ', qw(j,k),'qv = ',qv(j,k),'qc = ',qc(j,k),'qvs = ',qvs
+!!!!!!! CALL ADJUST !!!!!!!!!!!
+      if (cloudtxt) then
+            write(*,*) 'before: thetal = ',thetal(j,k), 'qw = ', qw(j,k),'qv = ',qv(j,k),'qc = ',qc(j,k),'qvs = ',qvs
+      end if
+
       CALL ADJUST (thetal(j,k), qw(j,k), qc(j,k), pio(j,k), qvs)
-      write(*,*) 'after:  thetal = ',thetal(j,k), 'qw = ', qw(j,k),'qv = ',qv(j,k),'qc = ',qc(j,k), 'qvs = ',qvs
+
+      if (cloudtxt) then
+            write(*,*) 'after:  thetal = ',thetal(j,k), 'qw = ', qw(j,k),'qv = ',qv(j,k),'qc = ',qc(j,k), 'qvs = ',qvs
+      end if
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       if (qw(j,k) .gt. qvs) then
             qv(j,k) = qvs
@@ -446,20 +458,21 @@ contains
             
 !     initialize all variables 
 
-      debug = .false.
+      debug = .true.
       animate = .true.
+      cloudtxt = .false.
       ekth = 50. !eddy viscosity
       ekv  = 50.
       ekp  = 50.
-      H = 500.
-      L = (2.**(3./2.))*H
-      delth = 0.0
+      H = 1000.*5.
+      L = (2.**(3./2.))*H/5.
+      delth = 4.8
       Cs = 50.
       dk = H/real(kt) !Vertical gridsize
       dj = L/real(jt) !y- gridsize
       La = 2.5e6 !J K^-1 kg^1
       qvs = .009
-      RELHUM = .99 !Initial relative humidity
+      RELHUM = 0.0 !Initial relative humidity
 
 
       do k=0, kt+1
@@ -519,8 +532,8 @@ contains
             end do
       end do
 
-      thetao(10,0) = 288.+20. !solar panel
-      theta(10,0) = 288.+20.
+      thetao(floor(jt/2.),0) = 288.+20. !solar panel
+      theta(floor(jt/2.),0) = 288.+20.
     
       CALL BOUND
 
@@ -530,7 +543,7 @@ contains
             open(73, file='atheta.dat', action='write',position='rewind')
             open(74, file='api.dat', action='write',position='rewind')
             open(75, file='aqc.dat', action='write',position='rewind')
-                        do k=0, kt+1
+                        do k=1, floor(kt*1./5.) !Only the bottom fifth of the domain
                               write(71,*) v(:,k)
                               write(72,*) w(:,k)
                               write(73,*) thetav(:,k)-thetao(:,k)
