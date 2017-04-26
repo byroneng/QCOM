@@ -14,6 +14,9 @@ program qcom
 !     All comments now start with !
 !     Added f90 declarations and procedures.
 
+      real THSTAR, TH1, QVSTAR, QV1
+      parameter (HLF = 2500000., pzero = 100000.)
+
 
       real dk, ekth, ekp, ekv, La, es
       real th0, Cs, H, L, dj, qvs, T, RELHUM
@@ -339,33 +342,41 @@ contains
 
 ! CALL ADJUST
 
-      T = thetal(j,k) * (( pio(j,k) / 100000. ) ** ( rgas / cp ))
+!       T = thetal(j,k) * (( pio(j,k) / 100000. ) ** ( rgas / cp ))
 
-      !Wexler's Formula
-      es = exp(   (-0.29912729e4  *((T)**(-2)))  + &
-      (-0.60170128e4  *((T)**(-1)))  + &
-            ( 0.1887643854e2*((T)**( 0)))  + & 
-            (-0.28354721e-1 *((T)**( 1)))  + &
-            ( 0.17838301e-4 *((T)**( 2)))  + &
-            (-0.84150417e-9 *((T)**( 3)))  + &
-            ( 0.44412543e-12*((T)**( 4)))  + &
-            ( 0.2858487e1*log( T)))
+!       !Wexler's Formula
+!       es = exp(   (-0.29912729e4  *((T)**(-2)))  + &
+!       (-0.60170128e4  *((T)**(-1)))  + &
+!             ( 0.1887643854e2*((T)**( 0)))  + & 
+!             (-0.28354721e-1 *((T)**( 1)))  + &
+!             ( 0.17838301e-4 *((T)**( 2)))  + &
+!             (-0.84150417e-9 *((T)**( 3)))  + &
+!             ( 0.44412543e-12*((T)**( 4)))  + &
+!             ( 0.2858487e1*log( T)))
 
-      qvs = 0.622*(es/(pio(j,k)-es))
+!       qvs = 0.622*(es/(pio(j,k)-es))
 
-      write(*,*) 'before: thetal = ',thetal(j,k), 'qw = ', qw(j,k),'qv = ',qv(j,k),'qc = ',qc(j,k),'qvs = ',qvs
-      CALL ADJUST (thetal(j,k), qw(j,k), qc(j,k), pio(j,k), qvs)
-      write(*,*) 'after:  thetal = ',thetal(j,k), 'qw = ', qw(j,k),'qv = ',qv(j,k),'qc = ',qc(j,k), 'qvs = ',qvs
-
-      if (qw(j,k) .gt. qvs) then
-            qv(j,k) = qvs
-            qc(j,k) = qw(j,k) - qv(j,k)
-            theta(j,k) = thetal(j,k) + ((L/(Cp*pio(j,k))*qc(j,k)))
-      else
-            qc(j,k) = 0
-            qv(j,k) = qw(j,k)
-            theta(j,k) = thetal(j,k)
+!!!!!!! CALL ADJUST !!!!!!!!!!!
+      if (cloudtxt) then
+            write(*,*) 'before: thetal = ',thetal(j,k), 'qw = ', qw(j,k),'qv = ',qv(j,k),'qc = ',qc(j,k)!,'qvs = ',qvs
       end if
+
+      CALL ADJUST (thetal(j,k), qw(j,k), qc(j,k), pio(j,k))!, qvs)
+
+      if (cloudtxt) then
+            write(*,*) 'after:  thetal = ',thetal(j,k), 'qw = ', qw(j,k),'qv = ',qv(j,k),'qc = ',qc(j,k)!, 'qvs = ',qvs
+      end if
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!       if (qw(j,k) .gt. qvs) then
+!             qv(j,k) = qvs
+!             qc(j,k) = qw(j,k) - qv(j,k)
+!             theta(j,k) = thetal(j,k) + ((L/(Cp*pio(j,k))*qc(j,k)))
+!       else
+!             qc(j,k) = 0
+!             qv(j,k) = qw(j,k)
+!             theta(j,k) = thetal(j,k)
+!       end if
 
       thetav(j,k) = theta(j,k) + thetao(j,k)*((0.61*qv(j,k))-qc(j,k))
       
@@ -544,7 +555,80 @@ contains
                   close(75)
       end if
       END SUBROUTINE Init
-      
 
+      SUBROUTINE ADJUST ( TH, QV, QC, PBAR )
+      pibar = (pbar/pzero)**(rgas/cp)
+      gamma = HLF/(cp*pibar)
+      THSTAR = TH
+      QVSTAR = QV
+
+      T = THSTAR * pibar
+      !Wexler's Formula
+      es1 = exp(   (-0.29912729e4  *((T)**(-2)))  + &
+      (-0.60170128e4  *((T)**(-1)))  + &
+            ( 0.1887643854e2*((T)**( 0)))  + & 
+            (-0.28354721e-1 *((T)**( 1)))  + &
+            ( 0.17838301e-4 *((T)**( 2)))  + &
+            (-0.84150417e-9 *((T)**( 3)))  + &
+            ( 0.44412543e-12*((T)**( 4)))  + &
+            ( 0.2858487e1*log( T)))      
+
+      ALPHA = DESDT(T) * 0.622 * pibar * pbar/(pbar-es1)**2
+      THFAC = gamma / (1. + gamma * ALPHA)
+
+      QVSAT = 0.622 / (pbar - es1) * es1
+      th1 = THSTAR + THFAC * (QVSTAR - QVSAT)
+      QV1 = QVSAT + ALPHA * (TH1 - THSTAR)
+
+      QW1 = QV + QC
+      QC1 = QW1 - QV1
+      QVS1 = QV1
+
+      if (QC1 .LT. 0.) then
+            QC1 = 0.
+            QV1 = QW1
+            TH1 = THSTAR + gamma * (QVSTAR - QV1)
+            QVS1 = QVSAT + ALPHA * (TH1 - THSTAR)
+      end if
+
+      TH = TH1
+      QV = QV1
+      QC = QC1
+      QVS = QVS1
+
+      RETURN
+
+      END SUBROUTINE ADJUST
+
+      FUNCTION DESDT ( T )
+
+!     LOWE'S FORMULA FOR THE DERIVATIVE OF
+!     SATURATION VAPOR PRESSURE WITH RESPECT TO TEMPERATURE.
+!     ES IS IN PASCALS. T IS IN DEGREES KELVIN.
+
+      DIMENSION A(7)
+      DATA A/4.438100E-01,    &
+             2.857003E-02,    &
+             7.938054E-04,    &
+             1.215215E-05,    &
+             1.036561E-07,    &
+             3.532422E-10,    &
+           - 7.090245E-13/
+
+      TC = T - 273.16
+
+      IF ( TC .LT. - 50. ) TC = - 50.
+
+      X = A(7)
+
+      DO   ii = 1,6
+      X = X * TC + A(7-ii)
+      end do
+
+      DESDT = X * 100.
+
+      RETURN
+
+      end
       
 end program qcom
