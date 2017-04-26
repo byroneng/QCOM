@@ -295,6 +295,7 @@ if animate
             ch(64,1:3) = 1;
             colormap(ch)
             title('\pi')
+            if cloud
             hold on
             h = pcolor(ones(size(aqcnow)));
             alpha(h,(aqcnow))
