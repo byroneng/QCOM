@@ -26,7 +26,7 @@ program qcom
       integer itt, N1, N2
       real Cp, g, tmax, dt, delth, a, b
 
-      logical animate, debug
+      logical animate, debug, cloudtxt
       parameter (jt = 20, kt = 10, jv = jt, kv = kt)
       parameter (Cp=1005., g=9.8, rgas=287.04)
       real, dimension (0:jv+1, 0:kv+1) :: v
@@ -459,6 +459,7 @@ contains
 
       debug = .false.
       animate = .true.
+      cloudtxt = .true.
       ekth = 50. !eddy viscosity
       ekv  = 50.
       ekp  = 50.
