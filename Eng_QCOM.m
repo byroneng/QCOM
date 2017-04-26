@@ -8,8 +8,8 @@ close all
 animate = false;
 plotKE = false;
 plotPROFILES = false;
-normalize = false; %also makes the clouds look better
-cloud = false; %currently only applies to the static plot
+normalize = true; %also makes the clouds look better
+cloud = true; %cloud layer
 
 %% Read in the data
 v = dlmread('v.dat');
@@ -48,7 +48,7 @@ ch = colormap;
 if cloud
     ch(64,1:3) = 1;
     hold on
-    h = pcolor(ones(12,22));
+    h = pcolor(ones(size(qc)));
     alpha(h,(qc))
     hold off
 end% if cloud
@@ -67,7 +67,7 @@ if normalize
 end% if normalize
 if cloud
     hold on
-    h = pcolor(ones(12,22));
+    h = pcolor(ones(size(qc)));
     alpha(h,(qc))
     hold off
 end %if cloud
@@ -86,7 +86,7 @@ if normalize
 end% if normalize
 if cloud
     hold on
-    h = pcolor(ones(12,22));
+    h = pcolor(ones(size(qc)));
     alpha(h,(qc))
     hold off
 end %if cloud
@@ -105,7 +105,7 @@ if normalize
 end% if normalize
 if cloud
     hold on
-    h = pcolor(ones(12,22));
+    h = pcolor(ones(size(qc)));
     alpha(h,(qc))
     hold off
 end %if cloud
@@ -207,8 +207,8 @@ if animate
     figure(4)
     
     for i=1:nframes
-        aqc((((i-1)*gridht) + 1),:) = 0;
-        aqc(i*gridht,:) = max(max(aqc));
+%        aqc((((i-1)*gridht) + 1),:) = 0;
+%        aqc(i*gridht,:) = max(max(aqc));
         subplot(2,2,1)
             contourf(av((i-1)*gridht + (1:gridht),:))
             if normalize
@@ -216,7 +216,14 @@ if animate
             end% if normalize
             colorbar
             ch = colormap;
-            ch(64,1:3) = 1;
+            if cloud
+                aqcnow = aqc((i-1)*gridht + (1:gridht),:);
+                ch(64,1:3) = 1;
+                hold on
+                h = pcolor(ones(size(aqcnow)));
+                alpha(h,(aqcnow))
+                hold off  
+            end %if cloud
             colormap(ch)
             title('v')
             hold on
@@ -232,7 +239,13 @@ if animate
             end% if normalize
             colorbar
             ch = colormap;
-            ch(64,1:3) = 1;
+            if cloud
+                ch(64,1:3) = 1;
+                hold on
+                h = pcolor(ones(size(aqcnow)));
+                alpha(h,(aqcnow))
+                hold off
+            end %if cloud
             colormap(ch)
             title('w')
             hold on
@@ -252,7 +265,13 @@ if animate
             end% if normalize
             colorbar
             ch = colormap;
-            ch(64,1:3) = 1;
+            if cloud
+                ch(64,1:3) = 1;
+                hold on
+                h = pcolor(ones(size(aqcnow)));
+                alpha(h,(aqcnow))
+                hold off
+            end %if cloud
             colormap(ch)
             title('\theta_v - \theta_0')
             hold on
@@ -277,8 +296,12 @@ if animate
             colormap(ch)
             title('\pi')
             hold on
-            h = pcolor(ones(12,22));
-            alpha(h,(aqc((i-1)*gridht + (1:gridht),:)))
+            h = pcolor(ones(size(aqcnow)));
+            alpha(h,(aqcnow))
+            hold off
+            end %if cloud
+            colormap(ch)
+            title('\pi')
             shading flat
             hold off
             
