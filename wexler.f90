@@ -1,4 +1,4 @@
-REAL FUNCTION es(T)
+REAL FUNCTION es (T)
 
 implicit none
 
