@@ -1,30 +1,23 @@
 program qcom
 
-!     gfortran -c adjust.f
-!     gfortran -o qcomcloud -fdefault-real-8 -Wall -fcheck=all Eng_QCOM.f90 adjust.o
+!     gfortran -c adjust.f90
+!     gfortran -c wexler.f90
+!     gfortran -c lowe.f90
+!     gfortran -o qcom -fdefault-real-8 -Wall -fcheck=all Eng_QCOM.f90 adjust.o wexler.o lowe.o
 
-!     pgf90 -c print.f
-!     pgf90 -o qcom QCOM.f90 print.o
-!     ./qcom
+!       real THSTAR, TH1, QVSTAR, QV1
+!       parameter (HLF = 2500000., pzero = 100000.)
 
-!     v. 2 (Sept 2000) --
-!     Array subscript ranges now start with 0 instead of 1.	
-
-!     v. 3 (Feb 2009) --
-!     All comments now start with !
-!     Added f90 declarations and procedures.
-
-      real THSTAR, TH1, QVSTAR, QV1
-      parameter (HLF = 2500000., pzero = 100000.)
-
-
-      real dk, ekth, ekp, ekv, La, es
+      real dk, ekth, ekp, ekv, La, esat
       real th0, Cs, H, L, dj, qvs, T, RELHUM
+
 
       !!! Parameters
       integer jt, kt, jv, kv, jw, kw, jth, kth, jp, kp, ittmax, Nout, j, k, ITTNOW
       integer itt, N1, N2
-      real Cp, g, tmax, dt, delth, a, b
+      real Cp, g, tmax, dt, delth, a, b, rgas
+      real thetaadj, qvadj, qcadj, piadj
+
 
       logical animate, debug, cloudtxt
       parameter (jt = 20, kt = 10, jv = jt, kv = kt)
@@ -65,7 +58,99 @@ program qcom
       parameter (tmax = 1000., dt = .1) 
       parameter (ITTMAX = int(tmax/dt), Nout = 10)
 
-      CALL INIT
+!!!!!!!!!!!!!!!!!!!! Initialize variables !!!!!!!!!!!!!!!!!!!!
+
+      debug = .false.
+      animate = .true.
+      cloudtxt = .false.
+      ekth = 50. !eddy viscosity
+      ekv  = 50.
+      ekp  = 50.
+      H = 500.
+      L = (2.**(3./2.))*H
+      delth = 4.8
+      Cs = 50.
+      dk = H/real(kt) !Vertical gridsize
+      dj = L/real(jt) !y- gridsize
+      La = 2.5e6 !J K^-1 kg^1
+      RELHUM = 1.01 !Initial relative humidity
+
+
+      do k=0, kt+1
+            thetao(:,k) = (288. - (delth*k*dk/H))
+            theta(:,k) = (288. - (delth*k*dk/H))
+            v(:,k) = 0.0
+            w(:,k) = 0.0
+            pi(:,k) = 0.0
+            qc(:,k) = 0.000001!07!*(exp((k*dk)/(kt*dk)))
+      end do
+
+      do k=1, kt
+            ftheta(:,k,1) = 0.0
+            fthetal(:,k,1) = 0.0
+            fv(:,k,1) = 0.0
+            fw(:,k,1) = 0.0
+            fpi(:,k,1) = 0.0
+
+            ftheta(:,k,2) = 0.0
+            fthetal(:,k,2) = 0.0
+            fv(:,k,2) = 0.0
+            fw(:,k,2) = 0.0
+            fpi(:,k,2) = 0.0
+      end do
+
+      do k=0, kt+1
+            do j=0, jt+1
+                  thetavo(j,k) = thetao(j,k)*(1.+(0.61*qvo(j,k)))
+                  thetav(j,k) = thetavo(j,k)
+                  pio(j,k) = 100000. - ((g/(Cp*thetavo(j,k)))*(k*dk)*100.*3000.) !fudged a little bit to get realistic numbers
+                  thetal(j,k) = theta(j,k) - ((La/(Cp*pio(j,k)))*qc(j,k))
+            end do
+      end do
+
+
+      do k=1,kt
+            do j=1,jt
+            T = theta(j,k) * (( pio(j,k) / 100000. ) ** ( rgas / cp ))
+
+            !Wexler's Formula
+            esat = es(T)
+            qvs = 0.622*(esat/(pio(j,k)-esat))
+            qvo(j,k) = RELHUM*qvs
+            qv(j,k) = qvo(j,k)
+            qw(j,k) = qc(j,k)+qv(j,k)
+            end do
+      end do
+
+      thetao(10,0) = 288.+20. !solar panel
+      theta(10,0) = 288.+20.
+
+!!!!!!!!!!!!!!!!!!!!! End of initialization !!!!!!!!!!!!!!!!!!!!!!
+    
+      CALL BOUND
+
+      if (animate) then
+            qc(:,kt+1) = .0007
+            qc(:,0) = 0.0
+
+            open(71, file='av.dat', action='write',position='rewind')
+            open(72, file='aw.dat', action='write',position='rewind')
+            open(73, file='atheta.dat', action='write',position='rewind')
+            open(74, file='api.dat', action='write',position='rewind')
+            open(75, file='aqc.dat', action='write',position='rewind')
+                        do k=0, kt+1
+                              write(71,*) v(:,k)
+                              write(72,*) w(:,k)
+                              write(73,*) thetav(:,k)-thetao(:,k)
+                              write(74,*) pi(:,k)
+                              write(75,*) qc(:,k)
+                        end do
+                  close(71)
+                  close(72)
+                  close(73)
+                  close(74)
+                  close(75)
+      end if
 
       ITT = 1 ! itt is time step index
 
@@ -76,6 +161,34 @@ program qcom
       N2 = MOD ( ITT - 1, 2 ) + 1
 
       CALL STEP ( N1, N2, A, B ) ! do first time step
+
+!!!!!!! CALL ADJUST !!!!!!!!!!!
+
+      do j = 1, jt
+      do k = 1, kt
+      thetaadj = thetal(j,k)
+      qvadj = qw(j,k)
+      qcadj = 0.0
+      piadj = pio(j,k)
+
+      if (cloudtxt) then
+            write(*,*) 'before: thetal = ',thetal(j,k), 'qw = ', qw(j,k),'qv = ',qvadj,'qc = ',qcadj!,'qvs = ',qvs
+      end if
+      
+      CALL ADJUST (thetaadj, qvadj, qcadj, piadj)!, qvs)
+
+      theta(j,k) = thetaadj
+      thetal(j,k) = thetaadj - ((La/(Cp*piadj))*qcadj)
+      qv(j,k) = qvadj
+      qc(j,k) = qcadj
+      qw(j,k) = qvadj + qcadj
+      
+      if (cloudtxt) then
+            write(*,*) 'after:  thetal = ',thetal(j,k), 'qw = ', qw(j,k),'qv = ',qvadj,'qc = ',qcadj!, 'qvs = ',qvs
+      end if
+      end do
+      end do
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       open(81, file='tv.dat') ! Open the file 'tv.dat'
       open(82, file='tw.dat') ! Open the file 'tw.dat'
@@ -98,10 +211,44 @@ program qcom
 
       CALL STEP ( N1, N2, A, B ) ! do subsequent time steps
 
+!!!!!!! CALL ADJUST !!!!!!!!!!!
+
+      do j = 1, jt
+      do k = 1, kt
+      thetaadj = thetal(j,k)
+      qvadj = qw(j,k)
+      qcadj = 0.0
+      piadj = pio(j,k)
+
+      if (cloudtxt) then
+            write(*,*) 'before: thetal = ',thetal(j,k), 'qw = ', qw(j,k),'qv = ',qvadj,'qc = ',qcadj!,'qvs = ',qvs
+      end if
+      
+      CALL ADJUST (thetaadj, qvadj, qcadj, piadj)!, qvs)
+
+      theta(j,k) = thetaadj
+      thetal(j,k) = thetaadj - ((La/(Cp*piadj))*qcadj)
+      qv(j,k) = qvadj
+      qc(j,k) = qcadj
+      qw(j,k) = qvadj + qcadj
+      
+      if (cloudtxt) then
+            write(*,*) 'after:  thetal = ',thetal(j,k), 'qw = ', qw(j,k),'qv = ',qvadj,'qc = ',qcadj!, 'qvs = ',qvs
+      end if
+      end do
+      end do
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+! IF (mod(1.*itt-1.,1000.) .eq. 0) then
+!       write(*,*) qc
+! end if
+
       end do
 	
 !     END-OF-RUN OUTPUT ROUTINES GO HERE  
 
+            qc(:,kt+1) = .0007
+            qc(:,0) = 0.0
 
             open(91, file='v.dat') ! Open the file 'v.dat'
                   do k=0, kt+1
@@ -207,6 +354,8 @@ contains
             write(84,*) sum(pi)
 
             if (animate) then
+                  qc(:,kt+1) = .0007
+                  qc(:,0) = 0.0
 
                   open(71, file='av.dat', action='write',position='append')
                   open(72, file='aw.dat', action='write',position='append')
@@ -356,17 +505,7 @@ contains
 
 !       qvs = 0.622*(es/(pio(j,k)-es))
 
-!!!!!!! CALL ADJUST !!!!!!!!!!!
-      if (cloudtxt) then
-            write(*,*) 'before: thetal = ',thetal(j,k), 'qw = ', qw(j,k),'qv = ',qv(j,k),'qc = ',qc(j,k)!,'qvs = ',qvs
-      end if
 
-      CALL ADJUST (thetal(j,k), qw(j,k), qc(j,k), pio(j,k))!, qvs)
-
-      if (cloudtxt) then
-            write(*,*) 'after:  thetal = ',thetal(j,k), 'qw = ', qw(j,k),'qv = ',qv(j,k),'qc = ',qc(j,k)!, 'qvs = ',qvs
-      end if
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !       if (qw(j,k) .gt. qvs) then
 !             qv(j,k) = qvs
@@ -453,183 +592,48 @@ contains
 
       END SUBROUTINE BOUND
 
-      SUBROUTINE INIT
-            
-!     initialize all variables 
 
-      debug = .false.
-      animate = .true.
-      cloudtxt = .true.
-      ekth = 50. !eddy viscosity
-      ekv  = 50.
-      ekp  = 50.
-      H = 500.
-      L = (2.**(3./2.))*H
-      delth = 4.8
-      Cs = 50.
-      dk = H/real(kt) !Vertical gridsize
-      dj = L/real(jt) !y- gridsize
-      La = 2.5e6 !J K^-1 kg^1
-      qvs = .009
-      RELHUM = .99 !Initial relative humidity
+      REAL FUNCTION es(T)
 
 
-      do k=0, kt+1
-            thetao(:,k) = (288. - (delth*k*dk/H))
-            theta(:,k) = (288. - (delth*k*dk/H))
-            v(:,k) = 0.0
-            w(:,k) = 0.0
-            pi(:,k) = 0.0
-            qc(:,k) = 0.0!07*(exp((k*dk)/(kt*dk)))
-      end do
+            REAL, INTENT(IN) :: T
 
-      do k=1, kt
-            ftheta(:,k,1) = 0.0
-            fthetal(:,k,1) = 0.0
-            fv(:,k,1) = 0.0
-            fw(:,k,1) = 0.0
-            fpi(:,k,1) = 0.0
-
-            ftheta(:,k,2) = 0.0
-            fthetal(:,k,2) = 0.0
-            fv(:,k,2) = 0.0
-            fw(:,k,2) = 0.0
-            fpi(:,k,2) = 0.0
-      end do
-
-!       do j=1, jt
-!             theta(j,5:6) = theta(j,5:6) + (.05*2.4)*cos((2*3.14159/L)*j*dj)
-!       end do
-
-      do k=0, kt+1
-            do j=0, jt+1
-                  thetavo(j,k) = thetao(j,k)*(1.+(0.61*qvo(j,k)))
-                  thetav(j,k) = thetavo(j,k)
-                  pio(j,k) = 100000. - (g/(Cp*thetavo(j,k)))
-                  thetal(j,k) = theta(j,k) - ((La/(Cp*pio(j,k)))*qc(j,k))
-            end do
-      end do
-
-      do k=1,kt
-            do j=1,jt
-            T = thetal(j,k) * (( pio(j,k) / 100000. ) ** ( rgas / cp ))
-
-            !Wexler's Formula
+      ! Wexler's formula for es(T)
             es = exp(   (-0.29912729e4  *((T)**(-2)))  + &
-            (-0.60170128e4  *((T)**(-1)))  + &
-                  ( 0.1887643854e2*((T)**( 0)))  + & 
-                  (-0.28354721e-1 *((T)**( 1)))  + &
-                  ( 0.17838301e-4 *((T)**( 2)))  + &
-                  (-0.84150417e-9 *((T)**( 3)))  + &
-                  ( 0.44412543e-12*((T)**( 4)))  + &
-                  ( 0.2858487e1*log( T)))
+                  (-0.60170128e4  *((T)**(-1)))  + &
+                        ( 0.1887643854e2*((T)**( 0)))  + & 
+                        (-0.28354721e-1 *((T)**( 1)))  + &
+                        ( 0.17838301e-4 *((T)**( 2)))  + &
+                        (-0.84150417e-9 *((T)**( 3)))  + &
+                        ( 0.44412543e-12*((T)**( 4)))  + &
+                        ( 0.2858487e1*log( T)))
 
-            qvs = 0.622*(es/(pio(j,k)-es))
-            qvo(j,k) = RELHUM*qvs
-            qv(j,k) = qvo(j,k)
-            qw(j,k) = qc(j,k)+qv(j,k)
-            end do
-      end do
+      END FUNCTION
 
-      thetao(10,0) = 288.+20. !solar panel
-      theta(10,0) = 288.+20.
-    
-      CALL BOUND
+      REAL FUNCTION DESDT(T)
 
-      if (animate) then
-            open(71, file='av.dat', action='write',position='rewind')
-            open(72, file='aw.dat', action='write',position='rewind')
-            open(73, file='atheta.dat', action='write',position='rewind')
-            open(74, file='api.dat', action='write',position='rewind')
-            open(75, file='aqc.dat', action='write',position='rewind')
-                        do k=0, kt+1
-                              write(71,*) v(:,k)
-                              write(72,*) w(:,k)
-                              write(73,*) thetav(:,k)-thetao(:,k)
-                              write(74,*) pi(:,k)
-                              write(75,*) qc(:,k)
-                        end do
-                  close(71)
-                  close(72)
-                  close(73)
-                  close(74)
-                  close(75)
-      end if
-      END SUBROUTINE Init
 
-      SUBROUTINE ADJUST ( TH, QV, QC, PBAR )
-      pibar = (pbar/pzero)**(rgas/cp)
-      gamma = HLF/(cp*pibar)
-      THSTAR = TH
-      QVSTAR = QV
+            REAL TC
+            REAL, INTENT(IN) :: T
 
-      T = THSTAR * pibar
-      !Wexler's Formula
-      es1 = exp(   (-0.29912729e4  *((T)**(-2)))  + &
-      (-0.60170128e4  *((T)**(-1)))  + &
-            ( 0.1887643854e2*((T)**( 0)))  + & 
-            (-0.28354721e-1 *((T)**( 1)))  + &
-            ( 0.17838301e-4 *((T)**( 2)))  + &
-            (-0.84150417e-9 *((T)**( 3)))  + &
-            ( 0.44412543e-12*((T)**( 4)))  + &
-            ( 0.2858487e1*log( T)))      
+            TC = T-273.15
 
-      ALPHA = DESDT(T) * 0.622 * pibar * pbar/(pbar-es1)**2
-      THFAC = gamma / (1. + gamma * ALPHA)
+            if (TC .lt. -50.) then
+                  TC = -50.
+            end if
 
-      QVSAT = 0.622 / (pbar - es1) * es1
-      th1 = THSTAR + THFAC * (QVSTAR - QVSAT)
-      QV1 = QVSAT + ALPHA * (TH1 - THSTAR)
+      !     LOWE'S FORMULA FOR THE DERIVATIVE OF
+      !     SATURATION VAPOR PRESSURE WITH RESPECT TO TEMPERATURE.
+      !     ES IS IN PASCALS. T IS IN DEGREES KELVIN.
 
-      QW1 = QV + QC
-      QC1 = QW1 - QV1
-      QVS1 = QV1
+            DESDT = 100. * ((((( ( (-7.090245E-13*TC) + &
+                                               3.532422E-10*TC)   + &
+                                               1.036561E-07*TC)   + &
+                                               1.215215E-05*TC)   + &
+                                                 7.938054E-04*TC)       + &
+                                                 2.857003E-02*TC)       + &
+                                                 4.438100E-01)
 
-      if (QC1 .LT. 0.) then
-            QC1 = 0.
-            QV1 = QW1
-            TH1 = THSTAR + gamma * (QVSTAR - QV1)
-            QVS1 = QVSAT + ALPHA * (TH1 - THSTAR)
-      end if
-
-      TH = TH1
-      QV = QV1
-      QC = QC1
-      QVS = QVS1
-
-      RETURN
-
-      END SUBROUTINE ADJUST
-
-      FUNCTION DESDT ( T )
-
-!     LOWE'S FORMULA FOR THE DERIVATIVE OF
-!     SATURATION VAPOR PRESSURE WITH RESPECT TO TEMPERATURE.
-!     ES IS IN PASCALS. T IS IN DEGREES KELVIN.
-
-      DIMENSION A(7)
-      DATA A/4.438100E-01,    &
-             2.857003E-02,    &
-             7.938054E-04,    &
-             1.215215E-05,    &
-             1.036561E-07,    &
-             3.532422E-10,    &
-           - 7.090245E-13/
-
-      TC = T - 273.16
-
-      IF ( TC .LT. - 50. ) TC = - 50.
-
-      X = A(7)
-
-      DO   ii = 1,6
-      X = X * TC + A(7-ii)
-      end do
-
-      DESDT = X * 100.
-
-      RETURN
-
-      end
+      END FUNCTION
       
 end program qcom
