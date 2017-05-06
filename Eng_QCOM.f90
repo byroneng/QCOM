@@ -1,8 +1,8 @@
 program qcom
 
-!     gfortran -c adjust.f90
-!     gfortran -c wexler.f90
-!     gfortran -c lowe.f90
+!     gfortran -c -fdefault-real-8 adjust.f90
+!     gfortran -c -fdefault-real-8 wexler.f90
+!     gfortran -c -fdefault-real-8 lowe.f90
 !     gfortran -o qcom -fdefault-real-8 -Wall -fcheck=all Eng_QCOM.f90 adjust.o wexler.o lowe.o
 
 !       real THSTAR, TH1, QVSTAR, QV1
@@ -63,7 +63,7 @@ program qcom
 
       debug = .false.
       animate = .true.
-      cloudtxt = .true.
+      cloudtxt = .false.
       ekth = 50. !eddy viscosity
       ekv  = 50.
       ekp  = 50.
@@ -74,7 +74,7 @@ program qcom
       dk = H/real(kt) !Vertical gridsize
       dj = L/real(jt) !y- gridsize
       La = 2.5e6 !J K^-1 kg^1
-      RELHUM = 1.01 !Initial relative humidity
+      RELHUM = 1.99 !Initial relative humidity
 
 
       do k=0, kt+1
@@ -104,7 +104,7 @@ program qcom
             do j=0, jt+1
                   thetavo(j,k) = thetao(j,k)*(1.+(0.61*qvo(j,k)))
                   thetav(j,k) = thetao(j,k)*(1.+(0.61*qvo(j,k)-qc(j,k)))
-                  pio(j,k) = 100000. - ((g/(Cp*thetavo(j,k)))*(k*dk)*100.*3000.) !fudged a little bit to get realistic numbers
+                  pio(j,k) = 100000. - ((g/(Cp*thetavo(j,k)))*(k*dk)*100.*3000.)
                   thetal(j,k) = theta(j,k) - ((La/(Cp*pio(j,k)))*qc(j,k))
             end do
       end do
@@ -122,6 +122,7 @@ program qcom
             qw(j,k) = qc(j,k)+qv(j,k)
             end do
       end do
+      write(*,*) pio
 
       thetao(10,0) = 288.+20. !solar panel
       theta(10,0) = 288.+20.
@@ -142,7 +143,7 @@ program qcom
                         do k=0, kt+1
                               write(71,*) v(:,k)
                               write(72,*) w(:,k)
-                              write(73,*) thetav(:,k)-thetao(:,k)
+                              write(73,*) thetav(:,k)-thetavo(:,k)
                               write(74,*) pi(:,k)
                               write(75,*) qc(:,k)
                         end do
@@ -167,13 +168,13 @@ program qcom
 
       do j = 1, jt
       do k = 1, kt
-      thetaadj = thetal(j,k)
+      thetaadj = theta(j,k)
       qvadj = qw(j,k)
       qcadj = 0.0
-      piadj = pio(j,k)
+      piadj = pio(j,k)+pi(j,k)
 
       if (cloudtxt) then
-            write(*,*) 'before: thetal = ',thetal(j,k), 'qw = ', qw(j,k),'qv = ',qvadj,'qc = ',qcadj!,'qvs = ',qvs
+            write(*,*) 'before: theta = ',theta(j,k), 'qw = ', qw(j,k),'qv = ',qvadj,'qc = ',qcadj!,'qvs = ',qvs
       end if
       
       CALL ADJUST (thetaadj, qvadj, qcadj, piadj)!, qvs)
@@ -187,7 +188,7 @@ program qcom
 
       
       if (cloudtxt) then
-            write(*,*) 'after:  thetal = ',thetal(j,k), 'qw = ', qw(j,k),'qv = ',qvadj,'qc = ',qcadj!, 'qvs = ',qvs
+            write(*,*) 'after:  theta = ',theta(j,k), 'qw = ', qw(j,k),'qv = ',qvadj,'qc = ',qcadj!, 'qvs = ',qvs
       end if
       end do
       end do
@@ -218,10 +219,10 @@ program qcom
 
       do j = 1, jt
       do k = 1, kt
-      thetaadj = thetal(j,k)
+      thetaadj = theta(j,k)
       qvadj = qw(j,k)
       qcadj = 0.0
-      piadj = pio(j,k)
+      piadj = pio(j,k)+pi(j,k)
 
       if (cloudtxt) then
             write(*,*) 'before: thetal = ',thetal(j,k), 'qw = ', qw(j,k),'qv = ',qvadj,'qc = ',qcadj!,'qvs = ',qvs
@@ -374,7 +375,7 @@ contains
                         do k=0, kt+1
                               write(71,*) v(:,k)
                               write(72,*) w(:,k)
-                              write(73,*) thetav(:,k)-thetao(:,k)
+                              write(73,*) thetav(:,k)-thetavo(:,k)
                               write(74,*) pi(:,k)
                               write(75,*) qc(:,k)
                         end do
@@ -481,7 +482,7 @@ contains
 
       REAL, INTENT(IN) :: A, B
       INTEGER, INTENT(IN) :: N1, N2
-      
+
 !     THE FOLLOWING LOOP UPDATES V USING EITHER THE FORWARD OR THE ADAMS-BASHFORTH 
 !     SCHEME DEPENDING ON THE VALUES OF A, B.  
 !     SUBSCRIPT N2 OF FV ALWAYS REFERS TO THE MOST RECENTLY CALCULATED VALUES FOR FV.
