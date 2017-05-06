@@ -7,6 +7,7 @@ program qcom
 
 !       real THSTAR, TH1, QVSTAR, QV1
 !       parameter (HLF = 2500000., pzero = 100000.)
+      implicit none
 
       real dk, ekth, ekp, ekv, La, esat
       real th0, Cs, H, L, dj, qvs, T, RELHUM
@@ -338,6 +339,9 @@ contains
 
       SUBROUTINE STEP ( N1, N2, A, B )
 
+      REAL, INTENT(IN) :: A, B
+      INTEGER, INTENT(IN) :: N1, N2
+
 
 !     This is the entire subroutine.
       CALL RCALC ( N2 ) ! calculate forcing terms from variables at current time
@@ -396,6 +400,7 @@ contains
 
       SUBROUTINE RCALC (  N2 )
 
+      INTEGER, INTENT(IN) :: N2
 
 !     CALCULATES FORCING TERMS FOR V(J,K), ETC.; STORES THEM  IN FV(J,K,N2), ETC.
 
@@ -474,7 +479,9 @@ contains
 
       SUBROUTINE AB ( N1, N2, A, B )
 
-
+      REAL, INTENT(IN) :: A, B
+      INTEGER, INTENT(IN) :: N1, N2
+      
 !     THE FOLLOWING LOOP UPDATES V USING EITHER THE FORWARD OR THE ADAMS-BASHFORTH 
 !     SCHEME DEPENDING ON THE VALUES OF A, B.  
 !     SUBSCRIPT N2 OF FV ALWAYS REFERS TO THE MOST RECENTLY CALCULATED VALUES FOR FV.
