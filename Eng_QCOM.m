@@ -5,7 +5,7 @@
 clear all
 close all
 
-animate = false;
+animate = true;
 plotKE = false;
 plotPROFILES = false;
 normalize = true; %also makes the clouds look better
@@ -92,9 +92,9 @@ if cloud
 end %if cloud
 colorbar
 if normalize
-    title('\theta_v - \theta_0','FontSize',16)
+    title('\theta_v\prime','FontSize',16)
 else
-    title('\theta_v - \theta_0 [K]','FontSize',16)
+    title('\theta_v\prime [K]','FontSize',16)
 end
 shading flat
 
@@ -273,7 +273,7 @@ if animate
                 hold off
             end %if cloud
             colormap(ch)
-            title('\theta_v - \theta_0')
+            title('\theta_v\prime')
             hold on
             h = pcolor(ones(12,22));
             alpha(h,(aqc((i-1)*gridht + (1:gridht),:)))
@@ -310,7 +310,7 @@ if animate
       frame = getframe(4);
       im = frame2im(frame);
       [imind,cm] = rgb2ind(im,256);
-      if i == 1;
+      if i == 1
           imwrite(imind,cm,filename,'gif', 'Loopcount',inf);
       else
           imwrite(imind,cm,filename,'gif','WriteMode','append');
