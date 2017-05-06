@@ -62,7 +62,7 @@ program qcom
 
       debug = .false.
       animate = .true.
-      cloudtxt = .false.
+      cloudtxt = .true.
       ekth = 50. !eddy viscosity
       ekv  = 50.
       ekp  = 50.
@@ -102,7 +102,7 @@ program qcom
       do k=0, kt+1
             do j=0, jt+1
                   thetavo(j,k) = thetao(j,k)*(1.+(0.61*qvo(j,k)))
-                  thetav(j,k) = thetavo(j,k)
+                  thetav(j,k) = thetao(j,k)*(1.+(0.61*qvo(j,k)-qc(j,k)))
                   pio(j,k) = 100000. - ((g/(Cp*thetavo(j,k)))*(k*dk)*100.*3000.) !fudged a little bit to get realistic numbers
                   thetal(j,k) = theta(j,k) - ((La/(Cp*pio(j,k)))*qc(j,k))
             end do
@@ -177,11 +177,13 @@ program qcom
       
       CALL ADJUST (thetaadj, qvadj, qcadj, piadj)!, qvs)
 
-      theta(j,k) = thetaadj
-      thetal(j,k) = thetaadj - ((La/(Cp*piadj))*qcadj)
       qv(j,k) = qvadj
       qc(j,k) = qcadj
       qw(j,k) = qvadj + qcadj
+      theta(j,k) = thetaadj
+      thetal(j,k) = thetaadj - ((La/(Cp*piadj))*qcadj)
+      thetav(j,k) = theta(j,k) + (thetao(j,k)*(0.61*qv(j,k)-qc(j,k)))
+
       
       if (cloudtxt) then
             write(*,*) 'after:  thetal = ',thetal(j,k), 'qw = ', qw(j,k),'qv = ',qvadj,'qc = ',qcadj!, 'qvs = ',qvs
@@ -226,11 +228,13 @@ program qcom
       
       CALL ADJUST (thetaadj, qvadj, qcadj, piadj)!, qvs)
 
-      theta(j,k) = thetaadj
-      thetal(j,k) = thetaadj - ((La/(Cp*piadj))*qcadj)
       qv(j,k) = qvadj
       qc(j,k) = qcadj
       qw(j,k) = qvadj + qcadj
+      theta(j,k) = thetaadj
+      thetal(j,k) = thetaadj - ((La/(Cp*piadj))*qcadj)
+      thetav(j,k) = theta(j,k) + (thetao(j,k)*(0.61*qv(j,k)-qc(j,k)))
+
       
       if (cloudtxt) then
             write(*,*) 'after:  thetal = ',thetal(j,k), 'qw = ', qw(j,k),'qv = ',qvadj,'qc = ',qcadj!, 'qvs = ',qvs
@@ -398,9 +402,9 @@ contains
       DO K = 1, KT
       DO J = 1, JT
       fv(J,K,N2)  = - (v(j,k)*((v(j+1,k)-v(j-1,k))/(2.*dj)))                    &
-                    - (((((w(j,k)+w(j+1,k))/2.)*((v(j,k+1)-v(j,k))/dk))        &
-                     +(((w(j,k-1)+w(j+1,k-1))/2.)*((v(j,k)-v(j,k-1))/dk)))/2.) &
-                    - (Cp*thetavo(j,k)*(pi(j+1,k) - pi(j,k))/dj)                &
+                    - (((((w(j,k)+w(j+1,k))/2.)*((v(j,k+1)-v(j,k))/dk))         &
+                     +(((w(j,k-1)+w(j+1,k-1))/2.)*((v(j,k)-v(j,k-1))/dk)))/2.)  &
+                    - (Cp*thetavo(j,k)*((pi(j+1,k) - pi(j,k))/dj))              &
                     + (ekv*(v(j,k+1) - (2.*v(j,k)) + v(j,k-1)) / (dk**2.))      &
                     + (ekv*(v(j+1,k) - (2.*v(j,k)) + v(j-1,k)) / (dj**2.))
       END DO
@@ -409,14 +413,12 @@ contains
 
       DO K = 1, KT
       DO J = 1, JT
-      fw(j,k,N2) = - (((((v(j,k+1)+v(j,k))/2.)*((w(j+1,k)-w(j,k))/dj))               &
-                        +(((v(j-1,k+1)+v(j-1,k))/2.)*((w(j,k)-w(j-1,k))/dj)))/2.)    &
-            - (w(j,k)*((w(j,k+1)-w(j,k-1))/(2.*dk)))                                  &
-            - (Cp*(thetavo(j,k+1)+thetao(j,k))*0.5*(pi(j,k+1)-pi(j,k))/dk)        &
-            + (g*((((theta(j,k+1) + theta(j,k)))/((thetao(j,k+1)+thetao(j,k))))-1.   &
-                  +(0.61*(((qv(j,k)+qv(j,k+1))-(qvo(j,k)+qvo(j,k+1)))*0.5))           &
-                  -(0.5*(qc(j,k)+qc(j,k+1)))))         &
-            + (ekp*(w(j,k+1) - (2.*w(j,k)) + w(j,k-1)) / (dk**2.))                    &
+      fw(j,k,N2) = - (((((v(j,k+1)+v(j,k))/2.)*((w(j+1,k)-w(j,k))/dj))              &
+                        +(((v(j-1,k+1)+v(j-1,k))/2.)*((w(j,k)-w(j-1,k))/dj)))/2.)   &
+            - (w(j,k)*((w(j,k+1)-w(j,k-1))/(2.*dk)))                                &
+            - (Cp*(thetavo(j,k+1)+thetao(j,k))*0.5*(pi(j,k+1)-pi(j,k))/dk)          &
+            + ((g/thetav(j,k))*(thetav(j,k)-thetavo(j,k)))                          &
+            + (ekp*(w(j,k+1) - (2.*w(j,k)) + w(j,k-1)) / (dk**2.))                  &
             + (ekp*(w(j+1,k) - (2.*w(j,k)) + w(j-1,k)) / (dj**2.))
       END DO
       END DO
@@ -479,11 +481,11 @@ contains
 
       DO K = 1, KT
       DO J = 1, JT
-      V(J,K)     = V(J,K)     + (DT  * (A * FV(J,K,N2)     + B * FV(J,K,N1)))
-      w(j,k)     = w(j,k)     + (DT  * (A * fw(j,k,N2)     + B * fw(j,k,N1)))
-      theta(J,K) = theta(J,K) + (DT  * (A * ftheta(J,K,N2) + B * ftheta(J,K,N1)))
+      V(J,K)      = V(J,K)      + (DT  * (A * FV(J,K,N2)      + B * FV(J,K,N1)))
+      w(j,k)      = w(j,k)      + (DT  * (A * fw(j,k,N2)      + B * fw(j,k,N1)))
+      theta(J,K)  = theta(J,K)  + (DT  * (A * ftheta(J,K,N2)  + B * ftheta(J,K,N1)))
       thetal(J,K) = thetal(J,K) + (DT  * (A * fthetal(J,K,N2) + B * fthetal(J,K,N1)))
-      pi(j,k)    = pi(j,k)    + (DT  * (A * fpi(j,k,N2)    + B * fpi(j,k,N1)))
+      pi(j,k)     = pi(j,k)     + (DT  * (A * fpi(j,k,N2)     + B * fpi(j,k,N1)))
       qw(j,k)     = qw(j,k)     + (DT  * (A * fqw(j,k,N2)     + B * fqw(j,k,N1)))
 
 !            qv(j,k) = qv(j,k) + .00001!!!!!!!!!!!!!!!!!!!!!!!!!!
