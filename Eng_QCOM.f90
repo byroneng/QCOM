@@ -71,9 +71,9 @@ program qcom
       H = 5000.
       L = (2.**(3./2.))*H/5.
       delth = .010 ! Lapse rate of bottom layer (K/m)
-      stabty = .01 ! Lapse rate of stable layer (K/m)
-      stabht = 1000. ! (un)Stable layer height (m)
-      stabdpt = 500. ! (un)Stable layer depth (m)
+      stabty = .02 ! Lapse rate of stable layer (K/m)
+      stabht = 1000. ! Stable layer base height (m)
+      stabdpt = 1000. ! Stable layer depth (m)
       Cs = 50.
       dk = H/real(kt) !Vertical gridsize
       dj = L/real(jt) !y- gridsize
@@ -84,13 +84,13 @@ program qcom
       !Bottom layer
       do k= 0, floor(stabht/dk)
             thetao(:,k) = (288. - (delth*k*dk))
-            qvo(:,k) = .005
+            qvo(:,k) = .007
       end do
 
       !Capping Inversion layer
       do k = floor(stabht/dk)+1, floor((stabht+stabdpt)/dk)
             thetao(:,k) = thetao(:,floor(stabht/dk)) + (stabty*((k*dk)-stabht))
-            qvo(:,k) = .002
+            qvo(:,k) = .005
       end do
 
       !Neutral layer
