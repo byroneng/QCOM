@@ -17,11 +17,12 @@ program qcom
       integer jt, kt, jv, kv, jw, kw, jth, kth, jp, kp, ittmax, Nout, j, k, ITTNOW
       integer itt, N1, N2
       real Cp, g, tmax, dt, delth, a, b, rgas
-      real thetaadj, qvadj, qcadj, piadj
+      real thetaadj, qvadj, qcadj, piadj, stabht, stabdpt, stabty
 
 
       logical animate, debug, cloudtxt
-      parameter (jt = 20, kt = 10, jv = jt, kv = kt)
+      parameter (jt = 40, kt = 100, jv = jt, kv = kt) 
+
       parameter (Cp=1005., g=9.8, rgas=287.04)
       real, dimension (0:jv+1, 0:kv+1) :: v
       real, dimension (1:jv, 1:kv, 2) :: fv
@@ -56,34 +57,55 @@ program qcom
       real, dimension (0:jth+1, 0:kth+1) :: qw
       real, dimension (1:jth, 1:kth, 2) :: fqw
 
-      parameter (tmax = 1000., dt = .1) 
+      parameter (tmax = 3000., dt = .1) 
       parameter (ITTMAX = int(tmax/dt), Nout = 10)
 
 !!!!!!!!!!!!!!!!!!!! Initialize variables !!!!!!!!!!!!!!!!!!!!
 
-      debug = .false.
+      debug = .true.
       animate = .true.
       cloudtxt = .false.
       ekth = 50. !eddy viscosity
       ekv  = 50.
       ekp  = 50.
-      H = 500.
-      L = (2.**(3./2.))*H
-      delth = 4.8
+      H = 5000.
+      L = (2.**(3./2.))*H/5.
+      delth = .010 ! Lapse rate of bottom layer (K/m)
+      stabty = .01 ! Lapse rate of stable layer (K/m)
+      stabht = 1000. ! (un)Stable layer height (m)
+      stabdpt = 500. ! (un)Stable layer depth (m)
       Cs = 50.
       dk = H/real(kt) !Vertical gridsize
       dj = L/real(jt) !y- gridsize
       La = 2.5e6 !J K^-1 kg^1
-      RELHUM = 1.99 !Initial relative humidity
+!      RELHUM = .99 !Initial relative humidity
+
+      !Initial theta profile
+      !Bottom layer
+      do k= 0, floor(stabht/dk)
+            thetao(:,k) = (288. - (delth*k*dk))
+            qvo(:,k) = .005
+      end do
+
+      !Capping Inversion layer
+      do k = floor(stabht/dk)+1, floor((stabht+stabdpt)/dk)
+            thetao(:,k) = thetao(:,floor(stabht/dk)) + (stabty*((k*dk)-stabht))
+            qvo(:,k) = .002
+      end do
+
+      !Neutral layer
+      do k = floor((stabht+stabdpt)/dk), kt+1
+            thetao(:,k) = thetao(:,floor((stabht+stabdpt)/dk))
+            qvo(:,k) = 0.0001
+      end do
 
 
       do k=0, kt+1
-            thetao(:,k) = (288. - (delth*k*dk/H))
-            theta(:,k) = (288. - (delth*k*dk/H))
+            theta(:,k) = thetao(:,k)!(288. - (delth*k*dk))
             v(:,k) = 0.0
             w(:,k) = 0.0
             pi(:,k) = 0.0
-            qc(:,k) = 0.000001!07!*(exp((k*dk)/(kt*dk)))
+            qc(:,k) = 0.0
       end do
 
       do k=1, kt
@@ -104,7 +126,7 @@ program qcom
             do j=0, jt+1
                   thetavo(j,k) = thetao(j,k)*(1.+(0.61*qvo(j,k)))
                   thetav(j,k) = thetao(j,k)*(1.+(0.61*qvo(j,k)-qc(j,k)))
-                  pio(j,k) = 100000. - ((g/(Cp*thetavo(j,k)))*(k*dk)*100.*3000.)
+                  pio(j,k) = 100000. - (((g/(Cp*thetavo(j,k)))*(k*dk))*100.*2000.)
                   thetal(j,k) = theta(j,k) - ((La/(Cp*pio(j,k)))*qc(j,k))
             end do
       end do
@@ -117,23 +139,22 @@ program qcom
             !Wexler's Formula
             esat = es(T)
             qvs = 0.622*(esat/(pio(j,k)-esat))
-            qvo(j,k) = RELHUM*qvs
+!            qvo(j,k) = qvo(j,k) + .005!RELHUM*qvs
             qv(j,k) = qvo(j,k)
             qw(j,k) = qc(j,k)+qv(j,k)
             end do
       end do
-      write(*,*) pio
 
-      thetao(10,0) = 288.+20. !solar panel
-      theta(10,0) = 288.+20.
+      thetao(floor(jt/2.),0) = 288.+20. !solar panel
+      theta(floor(jt/2.),0) = 288.+20.
 
 !!!!!!!!!!!!!!!!!!!!! End of initialization !!!!!!!!!!!!!!!!!!!!!!
     
       CALL BOUND
 
       if (animate) then
-            qc(:,kt+1) = .0007
-            qc(:,0) = 0.0
+!             qc(:,kt+1) = .0007
+!             qc(:,0) = 0.0
 
             open(71, file='av.dat', action='write',position='rewind')
             open(72, file='aw.dat', action='write',position='rewind')
@@ -153,6 +174,8 @@ program qcom
                   close(74)
                   close(75)
       end if
+
+
 
       ITT = 1 ! itt is time step index
 
@@ -253,8 +276,8 @@ program qcom
 	
 !     END-OF-RUN OUTPUT ROUTINES GO HERE  
 
-            qc(:,kt+1) = .0007
-            qc(:,0) = 0.0
+!            qc(:,kt+1) = .0000001
+!            qc(:,0) = 0.0
 
             open(91, file='v.dat') ! Open the file 'v.dat'
                   do k=0, kt+1
@@ -287,6 +310,27 @@ program qcom
                   do k=0, kt+1
                         write(95,*) qc(:,k)
                   end do
+            close(95)
+
+            open(96, file='thetao.dat')
+                  do k=0, kt+1
+                        write(96,*) thetao(:,k)
+                  end do
+            close(96)
+
+            open(97, file='params.dat', action='write',position='rewind') !file for model parameters to be used in Matlab
+                  write(97,*) H
+                  write(97,*) dk
+                  write(97,*) real(kt)
+                  write(97,*) L
+                  write(97,*) real(jt)
+            close(97)
+
+            open(98, file='pio.dat')
+                  do k=0, kt+1
+                        write(98,*) pio(:,k)
+                  end do
+            close(98)
 
            close(81)
            close(82)
@@ -349,7 +393,7 @@ contains
       CALL AB ( N1, N2, A, B ) ! update variables using a time scheme
       CALL BOUND ! apply boundary conditions to variables
 
-      if (mod(itt*1.,500.) .eq. 0) then
+      if (mod(itt*1.,60.) .eq. 0) then
 
             write(81,*) sum(v)
 
@@ -363,8 +407,8 @@ contains
             write(84,*) sum(pi)
 
             if (animate) then
-                  qc(:,kt+1) = .0007
-                  qc(:,0) = 0.0
+!                  qc(:,kt+1) = .0000001
+!                  qc(:,0) = 0.0
 
                   open(71, file='av.dat', action='write',position='append')
                   open(72, file='aw.dat', action='write',position='append')
@@ -394,7 +438,7 @@ contains
       end if
 
       if (debug) then
-            write(*,*) (float(itt)/float(ittmax))
+            write(*,*) (float(itt)*100./float(ittmax)),'% Complete.'
       end if
 
       END SUBROUTINE STEP
